@@ -9,6 +9,10 @@
 *.so.*
 *.dll
 *.dylib
+*.obj
+*.exe
+*.log
+*.lib
 
 # Qt-es
 object_script.*.Release
@@ -50,3 +54,7 @@ compile_commands.json
 
 # QtCreator local machine specific files for imported projects
 *creator.user*
+
+Thumbs.db
+cef/Windowsi386
+cef/Windowsx86_64
