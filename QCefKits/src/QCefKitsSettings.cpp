@@ -15,12 +15,12 @@
 #ifdef Q_OS_WIN
 #include <Windows.h>
 static const char *subProcessFileName = "CefSubProcess.exe";
-#else
+#elif defined(Q_OS_LINUX)
 #include <unistd.h>
 static const char *subProcessFileName = "CefSubProcess";
 #endif
 
-QCefKitsSettings::QCefKitsSettings()
+QCefKitsSettings::QCefKitsSettings(int /*argc*/, char **argv)
 {
 //    QString m_cachePath;
     backgroundColor = Qt::white;
@@ -35,10 +35,8 @@ QCefKitsSettings::QCefKitsSettings()
     }
 #else
     {
-        char *buf[10240];
-        getcwd(buf, sizeof(buf));
-        QString str(buf);
-        appDirPath = str;
+        QFileInfo fileInfo(argv[0]);
+        appDirPath = fileInfo.dir();
     }
 #endif
     subProcessPath = appDirPath.absoluteFilePath(subProcessFileName);

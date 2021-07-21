@@ -9,18 +9,19 @@ CEFDLLWRAPPERPATH=$$OUT_PWD/../libs
 message($$CEFPATH)
 
 win32: QMAKE_CXXFLAGS_WARN_ON -= -w34100
+unix: {
+QMAKE_CXXFLAGS += -Wno-unused-parameter
+}
 
 INCLUDEPATH += $$CEFPATH
 
-CONFIG(debug, debug|release)
-{
+CONFIG(debug, debug|release) {
 LIBS += -L$$CEFDLLWRAPPERPATH -lcef_dll_wrapper
 win32: LIBS += -L$$CEFPATH/Debug -llibcef
 else: LIBS += -L$$CEFPATH/Debug -lcef
 DEPENDPATH += $$CEFPATH/Debug $$CEFDLLWRAPPERPATH
 }
-CONFIG(release, debug|release)
-{
+CONFIG(release, debug|release) {
 LIBS += -L$$CEFDLLWRAPPERPATH -lcef_dll_wrapper
 win32: LIBS += -L$$CEFPATH/Release -llibcef
 else: LIBS += -L$$CEFPATH/Release -lcef

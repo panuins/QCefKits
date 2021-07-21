@@ -9,28 +9,40 @@
 
 #include "include/QCefWidget.h"
 #include "src/CefWebPage.h"
+#include "QCefKits_internal.h"
 #include <QApplication>
 #include <QTimer>
 #include <QThread>
 #include <QResizeEvent>
 #include <QDebug>
 
-extern CefSettings g_cefSettings;
-
 QCefWidget::QCefWidget(QWidget *parent)
     : QWidget(parent)
 {
+#if defined(Q_OS_LINUX)
+    this->setAttribute(Qt::WA_NativeWindow, true);
+    this->setAttribute(Qt::WA_DontCreateNativeAncestors, true);
+#endif
+    winId();
 }
 
 QCefWidget::~QCefWidget()
 {
+    qDebug() << "QCefWidget::~QCefWidget";
     closeBrowser();
+    while (hasCefBrowser())
+    {
+        if (QCefKits::g_cefSettings.external_message_pump)
+        {
+            CefDoMessageLoopWork();
+        }
+        QThread::msleep(10);
+    }
 }
 
 void QCefWidget::init(const QUrl &url)
 {
-//    m_page = CefWebPage::createNewPage(this, url);
-    setWebPage(CefWebPage::createNewPage(this, url));
+    setWebPage(CefWebPage::createNewPage(this));
     m_page->createBrowser(url);
 }
 
@@ -45,8 +57,12 @@ void QCefWidget::setWebPage(QSharedPointer<CefWebPage> page)
             this, SLOT(setWindowTitle(QString)));
     connect(m_page.data(), &CefWebPage::browserCreated,
             this, &QCefWidget::onBrowserCreated);
-    connect(m_page.data(), SIGNAL(browserClosed()),
-            this, SIGNAL(browserClosed()));
+    connect(m_page.data(), &CefWebPage::browserClosed,
+            this, [this]()
+    {
+//        qDebug() << "===browserClosed";
+        emit browserClosed();
+    });
     connect(m_page.data(), SIGNAL(loadStarted()),
             this, SIGNAL(loadStarted()));
     connect(m_page.data(), SIGNAL(loadComplete()),
@@ -62,7 +78,7 @@ void QCefWidget::setWebPage(QSharedPointer<CefWebPage> page)
         newBrowser->winId();
         newBrowser->setWebPage(page);
     },
-    (g_cefSettings.multi_threaded_message_loop == 0) ? Qt::AutoConnection : Qt::BlockingQueuedConnection);
+    (QCefKits::g_cefSettings.multi_threaded_message_loop == 0) ? Qt::AutoConnection : Qt::BlockingQueuedConnection);
 }
 
 void QCefWidget::loadUrl(const QUrl &url)
@@ -72,15 +88,49 @@ void QCefWidget::loadUrl(const QUrl &url)
 
 void QCefWidget::closeBrowser()
 {
-    m_page.clear();
+    if (m_page)
+    {
+//        qDebug() << "QCefWidget::closeBrowser aa";
+        m_page->closeBrowser();
+        m_page.clear();
+    }
+}
+
+void QCefWidget::setBrowserFocus(bool f)
+{
+    if (m_page)
+    {
+        m_page->setFocus(f);
+    }
+}
+
+bool QCefWidget::hasCefBrowser()
+{
+    if (m_page)
+    {
+        return m_page->hasBrowser();
+    }
+    return false;
 }
 
 void QCefWidget::closeEvent(QCloseEvent *event)
 {
 //    qDebug() << "Widget::closeEvent 1";
-    closeBrowser();
-//    qDebug() << "Widget::closeEvent 2";
+    if (hasCefBrowser())
+    {
+        closeBrowser();
+    }
+    while (hasCefBrowser())
+    {
+        if (QCefKits::g_cefSettings.external_message_pump)
+        {
+            CefDoMessageLoopWork();
+        }
+        QThread::msleep(10);
+    }
+//    else
     QWidget::closeEvent(event);
+//    qDebug() << "Widget::closeEvent 2";
 //    qDebug() << "Widget::closeEvent 3";
 }
 
@@ -91,6 +141,34 @@ void QCefWidget::resizeEvent(QResizeEvent *event)
     {
         m_page->resizeBrowser(event->size());
     }
+}
+
+void QCefWidget::focusInEvent(QFocusEvent *event)
+{
+    qDebug() << "QCefWidget::focusInEvent";
+    QWidget::focusInEvent(event);
+    setBrowserFocus(true);
+}
+
+void QCefWidget::focusOutEvent(QFocusEvent *event)
+{
+    qDebug() << "QCefWidget::focusOutEvent";
+    QWidget::focusOutEvent(event);
+    setBrowserFocus(false);
+}
+
+void QCefWidget::enterEvent(QEvent *event)
+{
+//    qDebug() << "QCefWidget::enterEvent";
+    QWidget::enterEvent(event);
+//    setBrowserFocus(true);
+}
+
+void QCefWidget::leaveEvent(QEvent *event)
+{
+//    qDebug() << "QCefWidget::leaveEvent";
+    QWidget::leaveEvent(event);
+//    setBrowserFocus(false);
 }
 
 void QCefWidget::onBrowserCreated()

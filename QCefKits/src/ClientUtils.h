@@ -10,6 +10,7 @@
 #ifndef CLIENTUTILS_H
 #define CLIENTUTILS_H
 #include "../include/QCefKitsGlobal.h"
+#include <include/cef_app.h>
 #include <set>
 #include <string>
 
@@ -18,7 +19,7 @@
 #include <include/wrapper/cef_message_router.h>
 #include <include/wrapper/cef_resource_manager.h>
 
-namespace CefHandler
+namespace QCefKits
 {
 
 // Returns a data: URI with the specified contents.
@@ -32,6 +33,7 @@ void Alert(CefRefPtr<CefBrowser> browser, const std::string& message);
 
 cef_log_severity_t LogLevelToCefLogServerity(enum QCefKits_logLevel level);
 QCefKits_logLevel CefLogServerityToLogLevel(cef_log_severity_t l);
-}  // namespace CefHandler
+
+}  // namespace QCefKits
 
 #endif // CLIENTUTILS_H

@@ -12,18 +12,48 @@
 #include "src/ClientAppBrowser.h"
 #include "src/CefWebPage.h"
 #include "../include/QCefWidget.h"
+#include "src/QCefKits_internal.h"
 #include <include/cef_app.h>
+#include <QDebug>
 #include <QTimer>
+#include "IPendingDialog.h"
+#include <QMutexLocker>
+#ifdef Q_OS_LINUX
+#include "X11Utils.h"
+#endif
 
+
+namespace QCefKits
+{
+static QMutex g_lock_pendingDialogs;
 CefSettings g_cefSettings;
+QTimer *g_timer = nullptr;
+static std::queue<CefRefPtr<IPendingDialog> > g_pendingDialogs;
+void pushPendingDialog(CefRefPtr<IPendingDialog> dialog)
+{
+    QMutexLocker locker(&g_lock_pendingDialogs);
+    g_pendingDialogs.push(dialog);
+}
 
-static QTimer *g_timer = nullptr;
+CefRefPtr<IPendingDialog> popPendingDialog()
+{
+    QMutexLocker locker(&g_lock_pendingDialogs);
+    CefRefPtr<IPendingDialog> ret = g_pendingDialogs.front();
+    g_pendingDialogs.pop();
+    return ret;
+}
+
+}
+
+using QCefKits::g_cefSettings;
+using QCefKits::g_timer;
+using QCefKits::g_cefSettings;
 
 static void copySettings(const QCefKitsSettings& settings)
 {
-    g_cefSettings.no_sandbox = settings.no_sandbox;
+    g_cefSettings.no_sandbox = settings.no_sandbox ? 1 : 0;
     g_cefSettings.background_color = static_cast<unsigned int>(settings.backgroundColor.rgba());
-    g_cefSettings.log_severity = CefHandler::LogLevelToCefLogServerity(settings.logLevel);
+    g_cefSettings.log_severity = QCefKits::LogLevelToCefLogServerity(settings.logLevel);
     if (settings.multiThread)
     {
         g_cefSettings.multi_threaded_message_loop = 1;
@@ -83,20 +113,31 @@ static bool initCef(CefMainArgs &main_args)
 //    qRegisterMetaType<CefWebPage>("CefWebPage");
     qRegisterMetaType<QSharedPointer<CefWebPage> >("QSharedPointer<CefWebPage>");
     g_timer = new QTimer();
-    g_timer->start(10);
+//    if (g_cefSettings.external_message_pump)
+    {
+        g_timer->start(10);
+    }
     QObject::connect(g_timer, &QTimer::timeout,
             g_timer, []()
     {
         if (g_cefSettings.external_message_pump)
         {
+//            qDebug() << "CefDoMessageLoopWork";
             CefDoMessageLoopWork();
         }
         else
         {
-            //
+            while (QCefKits::g_pendingDialogs.size() > 0)
+            {
+                CefRefPtr<QCefKits::IPendingDialog> dialog = QCefKits::popPendingDialog();
+                dialog->execPendingDialog();
+            }
         }
     });
-    CefRefPtr<CefApp> app(new CefHandler::ClientAppBrowser());
+    CefRefPtr<CefApp> app(new QCefKits::ClientAppBrowser());
+#ifdef Q_OS_LINUX
+    QCefKits::SetXErrorHandler();
+#endif
     return CefInitialize(main_args, g_cefSettings, app, nullptr);
 }
 
@@ -109,9 +150,15 @@ bool QCEFKITS_EXPORT QCefKitsInit_win(HINSTANCE hInstance, const QCefKitsSetting
 }
 #endif
 
-bool QCEFKITS_EXPORT QCefKitsInit(int /*argc*/, char** /*argv*/, const QCefKitsSettings& settings)
+bool QCEFKITS_EXPORT QCefKitsInit(int argc, char** argv, const QCefKitsSettings& settings)
 {
+#ifdef Q_OS_WIN
+    (void)argc;
+    (void)argv;
     CefMainArgs main_args(::GetModuleHandle(nullptr));
+#else
+    CefMainArgs main_args(argc, argv);
+#endif
     copySettings(settings);
     return initCef(main_args);
 }
@@ -120,6 +167,10 @@ void QCefKitsShutdown()
 {
     if (g_timer != nullptr)
     {
+        if (g_cefSettings.external_message_pump)
+        {
+            CefDoMessageLoopWork();
+        }
         g_timer->stop();
         g_timer->deleteLater();
     }

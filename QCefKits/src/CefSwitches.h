@@ -10,7 +10,7 @@
 #ifndef CEFSWITCHES_H
 #define CEFSWITCHES_H
 
-namespace CefHandler
+namespace QCefKits
 {
 namespace switches
 {

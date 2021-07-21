@@ -16,10 +16,17 @@
 #include <QPointer>
 #include <QSharedPointer>
 #include <QUrl>
+#include <QWidget>
 
 class QCefWidget;
 
-class CefWebPage : public QObject, public CefHandler::ClientHandler::Delegate
+#define LINUX_USING_X11_AS_MIDDLE_WINDOW
+//#define LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
+#ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
+#include <QWindow>
+#endif
+
+class CefWebPage : public QObject, public QCefKits::ClientHandler::Delegate
 {
     Q_OBJECT
 public:
@@ -40,18 +47,20 @@ public:
         bool scrollbarsVisible;
         bool isPopup;
     };
-    ~CefWebPage();
+    ~CefWebPage() override;
 
-    static QSharedPointer<CefWebPage> createNewPage(QCefWidget *w, const QUrl &url);
+    static QSharedPointer<CefWebPage> createNewPage(QCefWidget *w);
 
+    void closeBrowser();
     void createBrowser(const QUrl &url);
     void loadUrl(const QUrl &url);
+    bool hasBrowser() const;
 
     // Called when the browser is created.
     virtual void OnBrowserCreated(CefRefPtr<CefBrowser> browser) override;
 
     // Called when the browser is closing.
-    virtual void OnBrowserClosing(CefRefPtr<CefBrowser> browser) override;
+    virtual bool DoClose(CefRefPtr<CefBrowser> browser) override;
 
     // Called when the browser has been closed.
     virtual void OnBrowserClosed(CefRefPtr<CefBrowser> browser) override;
@@ -99,6 +108,8 @@ public:
             const std::vector<CefDraggableRegion>& regions) override;
 
     // Set focus to the next/previous control.
+    virtual void OnGotFocus(CefRefPtr<CefBrowser> browser) override;
+    virtual bool OnSetFocus(CefRefPtr<CefBrowser> browser, CefFocusHandler::FocusSource source) override;
     virtual void OnTakeFocus(CefRefPtr<CefBrowser> browser, bool next) override;
 
     // Called on the UI thread before a context menu is displayed.
@@ -107,7 +118,7 @@ public:
                                      CefRefPtr<CefContextMenuParams> params,
                                      CefRefPtr<CefMenuModel> model) override;
 
-    virtual QSharedPointer<CefHandler::ClientHandler::Delegate> CreatePopupWindow(
+    virtual QSharedPointer<QCefKits::ClientHandler::Delegate> CreatePopupWindow(
             CefRefPtr<CefBrowser> browser,
             bool is_devtools,
             CefLifeSpanHandler::WindowOpenDisposition target_disposition,
@@ -115,6 +126,7 @@ public:
             CefWindowInfo& windowInfo,
             CefBrowserSettings& settings) override;
 
+    void setFocus(bool f);
     void resizeBrowser(const QSize &size);
     QPointer<QCefWidget> cefWidget() const
     {
@@ -142,8 +154,14 @@ private:
     explicit CefWebPage();
 
     CefRefPtr<CefBrowser> m_browser;
-    CefRefPtr<CefHandler::ClientHandler> m_handler;
+    CefRefPtr<QCefKits::ClientHandler> m_handler;
     QPointer<QCefWidget> m_widget;
+#ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
+    QPointer<QWindow> m_parentWindow;
+    QPointer<QWidget> m_parentWidget;
+#elif defined(LINUX_USING_X11_AS_MIDDLE_WINDOW)
+    WId m_parentWinid = 0;
+#endif
 };
 
 #endif // CEFWEBPAGE_H

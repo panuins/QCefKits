@@ -11,7 +11,7 @@
 #include "CefSwitches.h"
 #include <include/wrapper/cef_helpers.h>
 
-namespace CefHandler
+namespace QCefKits
 {
 
 ClientRequestContextHandler::ClientRequestContextHandler()
@@ -27,47 +27,21 @@ bool ClientRequestContextHandler::OnBeforePluginLoad(const CefString& mime_type,
                                                      CefRefPtr<CefWebPluginInfo> /*plugin_info*/,
                                                      PluginPolicy* plugin_policy)
 {
-  // Always allow the PDF plugin to load.
-  if (*plugin_policy != PLUGIN_POLICY_ALLOW &&
-      mime_type == "application/pdf") {
-    *plugin_policy = PLUGIN_POLICY_ALLOW;
-    return true;
-  }
+    // Always allow the PDF plugin to load.
+    if (*plugin_policy != PLUGIN_POLICY_ALLOW &&
+            mime_type == "application/pdf")
+    {
+        *plugin_policy = PLUGIN_POLICY_ALLOW;
+        return true;
+    }
 
-  return false;
+    return false;
 }
 
 void ClientRequestContextHandler::OnRequestContextInitialized(
     CefRefPtr<CefRequestContext> /*request_context*/)
 {
-  CEF_REQUIRE_UI_THREAD();
-
-  CefRefPtr<CefCommandLine> command_line =
-      CefCommandLine::GetGlobalCommandLine();
-  if (command_line->HasSwitch(switches::kLoadExtension)) {
-//    if (MainContext::Get()
-//            ->GetRootWindowManager()
-//            ->request_context_per_browser()) {
-//      // The example extension loading implementation requires all browsers to
-//      // share the same request context.
-//      LOG(ERROR)
-//          << "Cannot mix --load-extension and --request-context-per-browser";
-//      return;
-//    }
-
-    // Load one or more extension paths specified on the command-line and
-    // delimited with semicolon.
-    const std::string& extension_path =
-        command_line->GetSwitchValue(switches::kLoadExtension);
-    if (!extension_path.empty()) {
-      std::string part;
-      std::istringstream f(extension_path);
-      while (getline(f, part, ';')) {
-//        if (!part.empty())
-//          extension_util::LoadExtension(request_context, part, this);
-      }
-    }
-  }
+    CEF_REQUIRE_UI_THREAD();
 }
 
 // CefExtensionHandler methods:

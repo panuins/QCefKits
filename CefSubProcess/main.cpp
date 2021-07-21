@@ -34,6 +34,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance,
 #elif defined(OS_LINUX)
 int main(int argc, char **argv)
 {
+//    std::cout << "main: 0" << std::endl;
     CefMainArgs main_args(argc, argv);
 #elif defined(OS_MAC)
 int main(int argc, char **argv)
@@ -53,24 +54,41 @@ int main(int argc, char **argv)
 #ifdef OS_WIN
     command_line->InitFromString(::GetCommandLineW());
 #elif defined(OS_LINUX)
+    command_line->InitFromArgv(argc, argv);
 #elif defined(OS_MAC)
+    command_line->InitFromArgv(argc, argv);
 #endif
 
+//    std::cout << "main: 1" << std::endl;
+//    {
+//        int i = 0;
+//        for (; i < argc; i++)
+//        {
+//            std::cout << "main: " << argv[i] << std::endl;
+//        }
+//    }
     CefRefPtr<CefApp> app;
     ClientApp::ProcessType process_type = ClientApp::GetProcessType(command_line);
-    if (process_type == ClientApp::RendererProcess)
+//    std::cout << "main: processtype=" << process_type << std::endl;
+    if ((process_type == ClientApp::RendererProcess) ||
+            (process_type == ClientApp::ZygoteProcess))
     {
+//        std::cout << "main: ClientAppRenderer" << std::endl;
         app = new ClientAppRenderer();
     }
-    else if (process_type == ClientApp::OtherProcess)
-    {
-        app = new ClientAppOther();
-    }
+//    else if (process_type == ClientApp::OtherProcess)
+//    {
+//        std::cout << "main: ClientAppOther" << std::endl;
+//        app = new ClientAppOther();
+//    }
     else
     {
-        return -1;
+//        std::cout << "main: ClientAppOther" << std::endl;
+        app = new ClientAppOther();
     }
+//    std::cout << "main: 2" << std::endl;
 
     int exit_code = CefExecuteProcess(main_args, app, sandbox_info);
+//    std::cout << "main: 3" << std::endl;
     return exit_code;
 }

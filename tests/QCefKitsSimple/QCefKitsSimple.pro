@@ -19,9 +19,15 @@ PRE_TARGETDEPS += $$OUT_PWD/../../bin/CefSubProcess.exe
 }
 else:{
 LIBS += -L$$OUT_PWD/../../libs -lQCefKits
-PRE_TARGETDEPS += $$OUT_PWD/../../libs/libQCefKits.a
 PRE_TARGETDEPS += $$OUT_PWD/../../libs/libQCefKits.so
 PRE_TARGETDEPS += $$OUT_PWD/../../bin/CefSubProcess
+CEFPATH=$$_PRO_FILE_PWD_/../../cef/$$QMAKE_HOST.os$$QT_ARCH
+CONFIG(debug, debug|release) {
+LIBS += -L$$CEFPATH/Debug -lcef
+}
+CONFIG(release, debug|release) {
+LIBS += -L$$CEFPATH/Release -lcef
+}
 }
 
 SOURCES += \

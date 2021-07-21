@@ -23,7 +23,7 @@
 #include <set>
 #include <string>
 
-namespace CefHandler
+namespace QCefKits
 {
 
 class ClientDownloadImageCallback;
@@ -51,11 +51,9 @@ public:
         // Called when the browser is created.
         virtual void OnBrowserCreated(CefRefPtr<CefBrowser> browser) = 0;
 
-        // Called when the browser is closing.
-        virtual void OnBrowserClosing(CefRefPtr<CefBrowser> browser) = 0;
-
         // Called when the browser has been closed.
         virtual void OnBrowserClosed(CefRefPtr<CefBrowser> browser) = 0;
+        virtual bool DoClose(CefRefPtr<CefBrowser> browser) = 0;
         virtual bool OnConsoleMessage(CefRefPtr<CefBrowser> browser,
                                       cef_log_severity_t level,
                                       const CefString& message,
@@ -99,6 +97,8 @@ public:
                 const std::vector<CefDraggableRegion>& regions) = 0;
 
         // Set focus to the next/previous control.
+        virtual void OnGotFocus(CefRefPtr<CefBrowser> /*browser*/) {}
+        virtual bool OnSetFocus(CefRefPtr<CefBrowser> /*browser*/, FocusSource /*source*/) {return false;}
         virtual void OnTakeFocus(CefRefPtr<CefBrowser> /*browser*/, bool /*next*/) {}
 
         // Called on the UI thread before a context menu is displayed.
@@ -121,8 +121,8 @@ public:
     // Constructor may be called on any thread.
     // |delegate| must outlive this object or DetachDelegate() must be called.
     ClientHandler(QSharedPointer<Delegate> delegate,
-                  bool is_osr,
-                  const std::wstring& startup_url);
+                  bool is_osr);
+    ~ClientHandler() OVERRIDE;
 
     // CefClient methods
     CefRefPtr<CefContextMenuHandler> GetContextMenuHandler() OVERRIDE {
@@ -143,10 +143,10 @@ public:
 
 #if defined(OS_LINUX)
     CefRefPtr<CefDialogHandler> GetDialogHandler() OVERRIDE {
-        return dialog_handler_;
+        return m_fileDialogHandler;
     }
     CefRefPtr<CefJSDialogHandler> GetJSDialogHandler() OVERRIDE {
-        return dialog_handler_;
+        return m_jsDialogHandler;
     }
 #endif
 
@@ -203,6 +203,7 @@ public:
 
     // CefFocusHandler methods
     void OnTakeFocus(CefRefPtr<CefBrowser> browser, bool next) OVERRIDE;
+    void OnGotFocus(CefRefPtr<CefBrowser> browser) OVERRIDE;
     bool OnSetFocus(CefRefPtr<CefBrowser> browser, FocusSource source) OVERRIDE;
 
     // CefKeyboardHandler methods
@@ -314,10 +315,6 @@ public:
                              CefRefPtr<CefRequest> request,
                              bool& allow_os_execution) OVERRIDE;
 
-    // Returns the number of browsers currently using this handler. Can only be
-    // called on the CEF UI thread.
-    int GetBrowserCount() const;
-
     // Show a new DevTools popup window.
     void ShowDevTools(CefRefPtr<CefBrowser> browser,
                       const CefPoint& inspect_element_at);
@@ -336,9 +333,6 @@ public:
 
     // Returns the Delegate.
     QSharedPointer<Delegate> delegate() const { return m_delegate; }
-
-    // Returns the startup URL.
-    std::wstring startup_url() const { return m_startup_url_; }
 
     // Returns true if this handler uses off-screen rendering.
     bool is_osr() const { return m_is_osr_; }
@@ -391,9 +385,6 @@ private:
     // True if this handler uses off-screen rendering.
     const bool m_is_osr_;
 
-    // The startup URL.
-    const std::wstring m_startup_url_;
-
     // True if mouse cursor change is disabled.
     bool m_mouse_cursor_change_disabled_;
 
@@ -405,7 +396,7 @@ private:
 
 #if defined(OS_LINUX)
     // Custom dialog handler for GTK.
-    CefRefPtr<ClientDialogHandlerGtk> dialog_handler_;
+//    CefRefPtr<ClientDialogHandlerGtk> dialog_handler_;
 #endif
 
     // Handles the browser side of query routing. The renderer side is handled
@@ -436,12 +427,8 @@ private:
         int radio_item;
     } m_test_menu_state_;
 
-    // The current number of browsers using this handler.
-    int m_browser_count_;
-
-    // Console logging state.
-    const std::string m_console_log_file_;
-    bool m_first_console_message_;
+    CefRefPtr<CefDialogHandler> m_fileDialogHandler;
+    CefRefPtr<CefJSDialogHandler> m_jsDialogHandler;
 
     // True if an editable field currently has focus.
     bool m_focus_on_editable_field_;
@@ -456,6 +443,6 @@ private:
     DISALLOW_COPY_AND_ASSIGN(ClientHandler);
 };
 
-}  // namespace CefHandler
+}  // namespace QCefKits
 
 #endif // CLIENTHANDLER_H

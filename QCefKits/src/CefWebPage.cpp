@@ -11,29 +11,88 @@
 #include "include/QCefWidget.h"
 #include "ClientHandler.h"
 #include "ClientRequestContextHandler.h"
+#include "ClientUtils.h"
+#include <include/cef_browser.h>
+#include <include/views/cef_browser_view.h>
+#include <include/views/cef_window.h>
+#include <include/views/cef_view.h>
+#include <QApplication>
 #include <QDebug>
 #ifdef Q_OS_WIN
 #include <Windows.h>
+#elif defined(Q_OS_LINUX)
+#include "X11Utils.h"
 #endif
+#undef Bool
+#undef Status
 
 CefWebPage::CefWebPage()
     : QObject(nullptr)
 {
-
 }
 
 CefWebPage::~CefWebPage()
 {
-    if (m_browser)
+    qDebug() << "QCefWidget::~CefWebPage";
+    closeBrowser();
+#ifdef Q_OS_LINUX
+#ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
+    if (m_parentWidget)
     {
-        m_browser->GetHost()->CloseBrowser(true);
+        delete m_parentWidget.data();
     }
+    if (m_parentWindow)
+    {
+        delete m_parentWindow.data();
+    }
+#elif defined(LINUX_USING_X11_AS_MIDDLE_WINDOW)
+    if (m_parentWinid)
+    {
+        QCefKits::DestoryCefBrowserWindow(m_parentWinid);
+        m_parentWinid = 0;
+    }
+#endif
+#endif
+}
+
+void CefWebPage::closeBrowser()
+{
+//    qDebug() << "CefWebPage::closeBrowser";
+#ifdef Q_OS_LINUX
+#ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
+    if (m_parentWindow)
+    {
+        m_parentWindow->setParent(nullptr);
+    }
+#elif defined(LINUX_USING_X11_AS_MIDDLE_WINDOW)
+    if (m_parentWinid)
+    {
+//        QCefKits::ReparentWindow(0, m_parentWinid, 0);
+//        XUnmapWindow(QX11Info::display(), m_parentWinid);
+    }
+#endif
+#endif
+    if (m_browser && (m_browser->GetHost()))
+    {
+#ifdef Q_OS_LINUX
+#ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
+        QCefKits::ReparentWindow(0, m_browser->GetHost()->GetWindowHandle(), 0);
+#elif defined(LINUX_USING_X11_AS_MIDDLE_WINDOW)
+        QCefKits::ReparentWindow(0, m_browser->GetHost()->GetWindowHandle(), 0);
+//        XUnmapWindow(QX11Info::display(), m_browser->GetHost()->GetWindowHandle());
+#endif
+#endif
+//        qDebug() << "CefWebPage::closeBrowser a";
+        m_browser->GetHost()->CloseBrowser(false);
+//        m_browser = nullptr;
+    }
+//    qDebug() << "CefWebPage::closeBrowser end";
 }
 
 void CefWebPage::createBrowser(const QUrl &url)
 {
-#ifdef Q_OS_WIN
     CefWindowInfo window_info;
+#ifdef Q_OS_WIN
     RECT wnd_rect = {0, 0, m_widget->width(), m_widget->height()};
     window_info.SetAsChild(HWND(m_widget->winId()), wnd_rect);
 
@@ -42,12 +101,22 @@ void CefWebPage::createBrowser(const QUrl &url)
 //      window_info.ex_style |= WS_EX_NOACTIVATE;
 //    }
 
+#elif defined(Q_OS_LINUX)
+#ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
+    CefRect wnd_rect = {0, 0, 100, 100};
+    window_info.SetAsChild(static_cast<CefWindowHandle>(m_parentWidget->winId()), wnd_rect);
+#elif defined(LINUX_USING_X11_AS_MIDDLE_WINDOW)
+    m_parentWinid = QCefKits::CreateCefBrowserWindow(100, 100);
+    CefRect wnd_rect = {0, 0, 100, 100};
+    window_info.SetAsChild(static_cast<CefWindowHandle>(m_parentWinid), wnd_rect);
+#endif
+#endif
     CefString startUpUrl = url.toString().toStdWString();
+//    qDebug() << "CefWebPage::createBrowser" << url;
     CefBrowserHost::CreateBrowser(window_info, m_handler,
                                   startUpUrl, CefBrowserSettings(),
                                   nullptr, CefRequestContext::CreateContext(
-                                      CefRequestContext::GetGlobalContext(), new CefHandler::ClientRequestContextHandler));
-#endif
+                                      CefRequestContext::GetGlobalContext(), new QCefKits::ClientRequestContextHandler));
 }
 
 void CefWebPage::loadUrl(const QUrl &url)
@@ -70,16 +139,21 @@ void CefWebPage::loadUrl(const QUrl &url)
     }
 }
 
-QSharedPointer<CefWebPage> CefWebPage::createNewPage(QCefWidget *w, const QUrl &url)
+bool CefWebPage::hasBrowser() const
+{
+    return m_browser.get() != nullptr;
+}
+
+QSharedPointer<CefWebPage> CefWebPage::createNewPage(QCefWidget *w)
 {
     QSharedPointer<CefWebPage> ret(new CefWebPage());
     ret->m_widget = w;
-    std::wstring strurl;
-    if (url.isValid())
-    {
-        strurl = url.toString().toStdWString();
-    }
-    ret->m_handler = new CefHandler::ClientHandler(ret, false, strurl);
+    ret->m_handler = new QCefKits::ClientHandler(ret, false);
+#ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
+    ret->m_parentWindow = new QWindow();
+    ret->m_parentWindow->show();
+    ret->m_parentWidget = QWidget::createWindowContainer(ret->m_parentWindow.data());
+#endif
     return ret;
 }
 
@@ -89,18 +163,65 @@ void CefWebPage::OnBrowserCreated(CefRefPtr<CefBrowser> browser)
 //    qDebug() << "CefWebPage::OnBrowserCreated"
 //             << browser->GetIdentifier();
     m_browser = browser;
+    WId handler = WId(m_browser->GetHost()->GetWindowHandle());
+#ifdef Q_OS_WIN
+    ::MoveWindow(HWND(handler), 0, 0, m_widget->width(), m_widget->height(), true);
+#elif defined(Q_OS_LINUX)
+#ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
+    if (m_parentWidget)
+    {
+        m_parentWidget->show();
+        m_parentWidget->setParent(m_widget);
+        m_parentWidget->resize(m_widget->width(), m_widget->height());
+    }
+    QCefKits::SetXWindowBounds(handler, 0, 0, m_widget->width(), m_widget->height());
+#elif defined(LINUX_USING_X11_AS_MIDDLE_WINDOW)
+    QCefKits::ReparentWindow(m_widget->winId(), m_parentWinid, 0);
+    QCefKits::SetXWindowBounds(m_parentWinid, 0, 0, m_widget->width(), m_widget->height());
+    QCefKits::SetXWindowBounds(handler, 0, 0, m_widget->width(), m_widget->height());
+#endif
+#endif
+    m_browser->GetHost()->NotifyMoveOrResizeStarted();
     emit browserCreated();
 }
 
 // Called when the browser is closing.
-void CefWebPage::OnBrowserClosing(CefRefPtr<CefBrowser> /*browser*/)
+bool CefWebPage::DoClose(CefRefPtr<CefBrowser> /*browser*/)
 {
-    //
+    qDebug() << "CefWebPage::DoClose";
+//#ifdef Q_OS_LINUX
+//#ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
+//    QCefKits::ReparentWindow(0, m_browser->GetHost()->GetWindowHandle(), 0);
+//    if (m_parentWidget)
+//    {
+//        delete m_parentWidget.data();
+//    }
+//    if (m_parentWindow)
+//    {
+//        delete m_parentWindow.data();
+//    }
+//#elif defined(LINUX_USING_X11_AS_MIDDLE_WINDOW)
+//    QCefKits::ReparentWindow(0, m_browser->GetHost()->GetWindowHandle(), 0);
+//    if (m_parentWinid)
+//    {
+//        QCefKits::ReparentWindow(0, m_parentWinid, 0);
+//        QCefKits::DestoryCefBrowserWindow(m_parentWinid);
+//        m_parentWinid = 0;
+//    }
+//#endif
+//#endif
+//    emit browserClosed();
+    m_browser = nullptr;
+    m_handler = nullptr;
+    return false;
 }
 
 // Called when the browser has been closed.
 void CefWebPage::OnBrowserClosed(CefRefPtr<CefBrowser> /*browser*/)
 {
+    qDebug() << "CefWebPage::OnBrowserClosed";
+    m_browser = nullptr;
+    m_handler = nullptr;
     emit browserClosed();
 }
 
@@ -110,7 +231,7 @@ bool CefWebPage::OnConsoleMessage(CefRefPtr<CefBrowser> /*browser*/,
                                   const CefString& source,
                                   int line)
 {
-    emit consoleMessage(CefHandler::CefLogServerityToLogLevel(level),
+    emit consoleMessage(QCefKits::CefLogServerityToLogLevel(level),
                         QString::fromStdWString(message.ToWString()),
                         QString::fromStdWString(source.ToWString()),
                         line);
@@ -148,9 +269,10 @@ void CefWebPage::OnAutoResize(CefRefPtr<CefBrowser> /*browser*/, const CefSize& 
 }
 
 void CefWebPage::OnLoadStart(CefRefPtr<CefBrowser> /*browser*/,
-                         CefRefPtr<CefFrame> /*frame*/,
-                         CefLoadHandler::TransitionType /*transition_type*/)
+                             CefRefPtr<CefFrame> /*frame*/,
+                             CefLoadHandler::TransitionType /*transition_type*/)
 {
+//    qDebug() << "CefWebPage::OnLoadStart";
     emit loadStarted();
 }
 
@@ -158,6 +280,7 @@ void CefWebPage::OnLoadEnd(CefRefPtr<CefBrowser> /*browser*/,
                            CefRefPtr<CefFrame> /*frame*/,
                            int httpStatusCode)
 {
+//    qDebug() << "CefWebPage::OnLoadEnd" << httpStatusCode;
     if ((httpStatusCode >= 100) && (httpStatusCode < 400))
     {
         emit loadComplete();
@@ -170,15 +293,17 @@ void CefWebPage::OnSetLoadingState(CefRefPtr<CefBrowser> /*browser*/,
                                    bool /*canGoBack*/,
                                    bool /*canGoForward*/)
 {
-    //
+//    qDebug() << "CefWebPage::OnSetLoadingState" << browser->GetIdentifier()
+//             << isLoading;
 }
 
 void CefWebPage::OnLoadError(CefRefPtr<CefBrowser> /*browser*/,
                              CefRefPtr<CefFrame> /*frame*/,
                              CefLoadHandler::ErrorCode /*errorCode*/,
-                             const CefString& /*errorText*/,
+                             const CefString& errorText,
                              const CefString& /*failedUrl*/)
 {
+//    qDebug() << "CefWebPage::OnLoadError" << QString::fromStdWString(errorText.ToWString());
     emit loadFailed();
 }
 
@@ -188,6 +313,22 @@ void CefWebPage::OnSetDraggableRegions(
         const std::vector<CefDraggableRegion>& /*regions*/)
 {
     //
+}
+
+void CefWebPage::OnGotFocus(CefRefPtr<CefBrowser> /*browser*/)
+{
+    if (qApp)
+    {
+        if (qApp->focusWidget() && qApp->focusWidget() != m_widget.data())
+        {
+            qApp->focusWidget()->clearFocus();
+        }
+    }
+}
+
+bool CefWebPage::OnSetFocus(CefRefPtr<CefBrowser> /*browser*/, CefFocusHandler::FocusSource /*source*/)
+{
+    return false;
 }
 
 // Set focus to the next/previous control.
@@ -205,7 +346,7 @@ void CefWebPage::OnBeforeContextMenu(CefRefPtr<CefBrowser> /*browser*/,
     //
 }
 
-QSharedPointer<CefHandler::ClientHandler::Delegate> CefWebPage::CreatePopupWindow(
+QSharedPointer<QCefKits::ClientHandler::Delegate> CefWebPage::CreatePopupWindow(
         CefRefPtr<CefBrowser> /*browser*/,
         bool /*is_devtools*/,
         CefLifeSpanHandler::WindowOpenDisposition target_disposition,
@@ -237,9 +378,29 @@ QSharedPointer<CefHandler::ClientHandler::Delegate> CefWebPage::CreatePopupWindo
 #ifdef Q_OS_WIN
         RECT wnd_rect = {0, 0, ret->m_widget->width(), ret->m_widget->height()};
         windowInfo.SetAsChild(HWND(ret->m_widget->winId()), wnd_rect);
+#elif defined(Q_OS_LINUX)
+#ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
+        CefRect wnd_rect = {0, 0, 100, 100};
+        windowInfo.SetAsChild(static_cast<CefWindowHandle>(ret->m_parentWidget->winId()), wnd_rect);
+#elif defined(LINUX_USING_X11_AS_MIDDLE_WINDOW)
+        ret->m_parentWinid = QCefKits::CreateCefBrowserWindow(100, 100);
+        CefRect wnd_rect = {0, 0, 100, 100};
+        windowInfo.SetAsChild(static_cast<CefWindowHandle>(ret->m_parentWinid), wnd_rect);
+#endif
 #endif
     }
-    return ret.staticCast<CefHandler::ClientHandler::Delegate>();
+    return ret.staticCast<QCefKits::ClientHandler::Delegate>();
+}
+
+void CefWebPage::setFocus(bool f)
+{
+    if (m_browser)
+    {
+        if (m_browser->GetHost())
+        {
+            m_browser->GetHost()->SetFocus(f);
+        }
+    }
 }
 
 void CefWebPage::resizeBrowser(const QSize &size)
@@ -250,6 +411,17 @@ void CefWebPage::resizeBrowser(const QSize &size)
 #ifdef Q_OS_WIN
         ::MoveWindow(HWND(handler), 0, 0, size.width(), size.height(), true);
 #elif defined(Q_OS_LINUX)
+#ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
+        if (m_parentWidget)
+        {
+            m_parentWidget->resize(size);
+        }
+        QCefKits::SetXWindowBounds(handler, 0, 0, size.width(), size.height());
+#elif defined(LINUX_USING_X11_AS_MIDDLE_WINDOW)
+        QCefKits::SetXWindowBounds(m_parentWinid, 0, 0, size.width(), size.height());
+        QCefKits::SetXWindowBounds(handler, 0, 0, size.width(), size.height());
+#endif
+//        qDebug() << "CefWebPage::resizeBrowser" << size;
 #endif
         m_browser->GetHost()->NotifyMoveOrResizeStarted();
     }
@@ -257,5 +429,29 @@ void CefWebPage::resizeBrowser(const QSize &size)
 
 void CefWebPage::setCefWidget(QPointer<QCefWidget> widget)
 {
+#ifdef Q_OS_WIN
+#elif defined(Q_OS_LINUX)
+#ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
+    if (m_parentWidget)
+    {
+        delete m_parentWidget.data();
+    }
+    if (m_parentWindow)
+    {
+        delete m_parentWindow.data();
+    }
+    m_parentWindow = new QWindow();
+    m_parentWidget = QWidget::createWindowContainer(m_parentWindow.data());
+    if (m_parentWidget)
+    {
+        m_parentWidget->setParent(widget.data());
+    }
+#elif defined(LINUX_USING_X11_AS_MIDDLE_WINDOW)
+    if (widget)
+    {
+        QCefKits::ReparentWindow(widget->winId(), m_parentWinid, 0);
+    }
+#endif
+#endif
     m_widget = widget;
 }

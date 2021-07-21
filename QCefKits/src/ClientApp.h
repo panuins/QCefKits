@@ -13,7 +13,7 @@
 #include <include/cef_app.h>
 #include <vector>
 
-namespace CefHandler
+namespace QCefKits
 {
 
 // Base class for customizing process-type-based behavior.
@@ -45,6 +45,6 @@ private:
     DISALLOW_COPY_AND_ASSIGN(ClientApp);
 };
 
-}  // namespace CefHandler
+}  // namespace QCefKits
 
 #endif // CLIENTAPP_H

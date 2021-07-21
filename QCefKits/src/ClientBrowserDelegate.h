@@ -18,7 +18,7 @@
 #include <include/cef_crash_util.h>
 #include <include/cef_file_util.h>
 
-namespace CefHandler {
+namespace QCefKits {
 class ClientBrowserDelegate : public ClientAppBrowser::Delegate {
  public:
   ClientBrowserDelegate();

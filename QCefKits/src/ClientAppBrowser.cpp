@@ -13,7 +13,7 @@
 #include <include/cef_cookie.h>
 #include "CefSwitches.h"
 
-namespace CefHandler
+namespace QCefKits
 {
 
 ClientAppBrowser::ClientAppBrowser()
@@ -26,6 +26,14 @@ void ClientAppBrowser::OnBeforeCommandLineProcessing(
         CefRefPtr<CefCommandLine> command_line)
 {
     // Pass additional command-line flags to the browser process.
+#ifdef OS_LINUX
+//    command_line->AppendSwitch("disable-gpu");
+//    command_line->AppendSwitch("disable-gpu-compositing");
+//    command_line->AppendSwitch("disable-gpu-sandbox");
+//    command_line->AppendSwitch("no-zygote");
+//    command_line->AppendSwitch("no-sandbox");
+//    command_line->AppendSwitch("headless");
+#endif
     if (process_type.empty())
     {
         // Pass additional command-line flags when off-screen rendering is enabled.
@@ -125,4 +133,4 @@ void ClientAppBrowser::CreateDelegates(std::set<CefRefPtr<Delegate> >& delegates
   delegates.insert(new ClientBrowserDelegate);
 }
 
-}  // namespace CefHandler
+}  // namespace QCefKits

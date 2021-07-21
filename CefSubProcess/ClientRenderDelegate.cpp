@@ -21,18 +21,6 @@ static const char kFocusedNodeChangedMessage[] = "ClientRenderer.FocusedNodeChan
 void ClientRenderDelegate::OnWebKitInitialized(CefRefPtr<ClientAppRenderer> app)
 {
      (void)app;
-    if (CefCrashReportingEnabled())
-    {
-     // Set some crash keys for testing purposes. Keys must be defined in the
-     // "crash_reporter.cfg" file. See cef_crash_util.h for details.
-//      CefSetCrashKeyValue("testkey_small1", "value1_small_renderer");
-//      CefSetCrashKeyValue("testkey_small2", "value2_small_renderer");
-//      CefSetCrashKeyValue("testkey_medium1", "value1_medium_renderer");
-//      CefSetCrashKeyValue("testkey_medium2", "value2_medium_renderer");
-//      CefSetCrashKeyValue("testkey_large1", "value1_large_renderer");
-//      CefSetCrashKeyValue("testkey_large2", "value2_large_renderer");
-   }
-
    // Create the renderer-side router for query handling.
    CefMessageRouterConfig config;
    message_router_ = CefMessageRouterRendererSide::Create(config);
@@ -64,7 +52,8 @@ void ClientRenderDelegate::OnFocusedNodeChanged(CefRefPtr<ClientAppRenderer> app
     (void)app;
     (void)browser;
     bool is_editable = (node.get() && node->IsEditable());
-    if (is_editable != last_node_is_editable_) {
+    if (is_editable != last_node_is_editable_)
+    {
         // Notify the browser of the change in focused element type.
         last_node_is_editable_ = is_editable;
         CefRefPtr<CefProcessMessage> message =

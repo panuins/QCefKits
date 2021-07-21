@@ -13,7 +13,7 @@
 #include "ClientApp.h"
 #include <set>
 
-namespace CefHandler
+namespace QCefKits
 {
 
 // Client app implementation for the browser process.
@@ -78,6 +78,6 @@ private:
     DISALLOW_COPY_AND_ASSIGN(ClientAppBrowser);
 };
 
-}  // namespace CefHandler
+}  // namespace QCefKits
 
 #endif // CLIENTAPPBROWSER_H

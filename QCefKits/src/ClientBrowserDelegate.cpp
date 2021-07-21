@@ -10,13 +10,13 @@
 #include "ClientBrowserDelegate.h"
 #include "CefSwitches.h"
 
-namespace CefHandler {
+namespace QCefKits {
 ClientBrowserDelegate::ClientBrowserDelegate()
 {
 
 }
 
-void ClientBrowserDelegate::OnContextInitialized(CefRefPtr<ClientAppBrowser> app)
+void ClientBrowserDelegate::OnContextInitialized(CefRefPtr<ClientAppBrowser> /*app*/)
 {
   const std::string& crl_sets_path =
       CefCommandLine::GetGlobalCommandLine()->GetSwitchValue(
@@ -28,8 +28,8 @@ void ClientBrowserDelegate::OnContextInitialized(CefRefPtr<ClientAppBrowser> app
 }
 
 void ClientBrowserDelegate::OnBeforeCommandLineProcessing(
-    CefRefPtr<ClientAppBrowser> app,
-    CefRefPtr<CefCommandLine> command_line)
+    CefRefPtr<ClientAppBrowser> /*app*/,
+    CefRefPtr<CefCommandLine> /*command_line*/)
 {
   // Append Chromium command line parameters if touch events are enabled
 //    if (client::MainContext::Get()->TouchEventsEnabled())

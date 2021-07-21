@@ -29,6 +29,8 @@ public:
     void setWebPage(QSharedPointer<CefWebPage> page);
     void loadUrl(const QUrl &url);
     void closeBrowser();
+    void setBrowserFocus(bool f);
+    bool hasCefBrowser();
 
 Q_SIGNALS:
     void consoleMessage(QCefKits_logLevel level,
@@ -60,6 +62,10 @@ Q_SIGNALS:
 protected:
     void closeEvent(QCloseEvent *event);
     void resizeEvent(QResizeEvent *event);
+    void focusInEvent(QFocusEvent *event);
+    void focusOutEvent(QFocusEvent *event);
+    void enterEvent(QEvent *event);
+    void leaveEvent(QEvent *event);
 
 private Q_SLOTS:
     void onBrowserCreated();

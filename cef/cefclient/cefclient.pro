@@ -10,8 +10,6 @@ message($$CEFPATH)
 
 INCLUDEPATH += $$CEFPATH
 
-win32: LIBS += d3d11.lib glu32.lib imm32.lib opengl32.lib oleacc.lib comctl32.lib rpcrt4.lib shlwapi.lib ws2_32.lib user32.lib Shell32.lib Gdi32.lib Comdlg32.lib
-
 CONFIG(debug, debug|release)
 {
 LIBS += -L$$CEFDLLWRAPPERPATH -lcef_dll_wrapper
@@ -25,6 +23,62 @@ LIBS += -L$$CEFDLLWRAPPERPATH -lcef_dll_wrapper
 win32:LIBS += -L$$CEFPATH/Release -llibcef
 else:LIBS += -L$$CEFPATH/Release -lcef
 DEPENDPATH += $$CEFPATH/Release $$CEFDLLWRAPPERPATH
+}
+
+win32: LIBS += d3d11.lib glu32.lib imm32.lib opengl32.lib oleacc.lib comctl32.lib rpcrt4.lib shlwapi.lib ws2_32.lib user32.lib Shell32.lib Gdi32.lib Comdlg32.lib
+unix: {
+CONFIG += link_pkgconfig
+PKGCONFIG += gmodule-2.0 gtk+-3.0 gthread-2.0 gtk+-unix-print-3.0 xi gl
+LIBS += -ldl -lX11
+DEFINES += _FILE_OFFSET_BITS=64
+QMAKE_CFLAGS += -std=c99
+QMAKE_CXXFLAGS += -fno-strict-aliasing
+QMAKE_CXXFLAGS += -fPIC
+QMAKE_CXXFLAGS += -fstack-protector
+QMAKE_CXXFLAGS += -funwind-tables
+QMAKE_CXXFLAGS += -fvisibility=hidden
+QMAKE_CXXFLAGS += --param=ssp-buffer-size=4
+QMAKE_CXXFLAGS += -pipe
+QMAKE_CXXFLAGS += -pthread
+QMAKE_CXXFLAGS += -fno-exceptions
+QMAKE_CXXFLAGS += -fno-rtti
+QMAKE_CXXFLAGS += -fno-threadsafe-statics
+QMAKE_CXXFLAGS += -fvisibility-inlines-hidden
+QMAKE_CXXFLAGS += -std=gnu++11
+QMAKE_CXXFLAGS += -Wsign-compare
+QMAKE_CXXFLAGS += -Wno-missing-field-initializers
+QMAKE_CXXFLAGS += -Wno-unused-parameter
+QMAKE_CXXFLAGS += -Wno-error=comment
+QMAKE_CXXFLAGS += -Wno-comment
+QMAKE_CXXFLAGS += -Wno-deprecated-declarations
+QMAKE_CXXFLAGS += -Wno-unused-local-typedefs
+QMAKE_CXXFLAGS += -Wno-literal-suffix
+QMAKE_CXXFLAGS += -Wno-narrowing
+QMAKE_CXXFLAGS += -Wno-attributes
+QMAKE_LFLAGS += -fPIC -pthread
+QMAKE_LFLAGS += -Wl,--disable-new-dtags
+QMAKE_LFLAGS += -Wl,--fatal-warnings
+QMAKE_LFLAGS += -Wl,-rpath,.
+QMAKE_LFLAGS += -Wl,-z,noexecstack
+QMAKE_LFLAGS += -Wl,-z,now
+QMAKE_LFLAGS += -Wl,-z,relro
+CONFIG(debug, debug|release){
+
+} else {
+DEFINES -= _FORTIFY_SOURCE
+DEFINES += _FORTIFY_SOURCE=2
+DEFINES += NDEBUG
+QMAKE_LFLAGS += -fdata-sections
+QMAKE_LFLAGS += -ffunction-sections
+QMAKE_LFLAGS += -fno-ident
+QMAKE_LFLAGS += -Wl,-O1
+QMAKE_LFLAGS += -Wl,--as-needed
+QMAKE_LFLAGS += -Wl,--gc-sections
+}
+contains(QT_ARCH, x86_64) {
+QMAKE_CXXFLAGS += -m64 -march=x86-64
+QMAKE_LFLAGS += -m64
+}
 }
 
 SOURCES += \
@@ -42,8 +96,6 @@ SOURCES += \
         browser/main_context.cc \
         browser/main_context_impl.cc \
         browser/media_router_test.cc \
-        browser/osr_accessibility_helper.cc \
-        browser/osr_accessibility_node.cc \
         browser/osr_renderer.cc \
         browser/preferences_test.cc \
         browser/response_filter_test.cc \
@@ -126,8 +178,6 @@ HEADERS += \
     browser/main_context.h \
     browser/main_context_impl.h \
     browser/media_router_test.h \
-    browser/osr_accessibility_helper.h \
-    browser/osr_accessibility_node.h \
     browser/osr_dragdrop_events.h \
     browser/osr_renderer.h \
     browser/osr_renderer_settings.h \
@@ -182,6 +232,8 @@ browser/browser_window_osr_win.cc \
 browser/browser_window_std_win.cc \
 browser/main_context_impl_win.cc \
 browser/main_message_loop_multithreaded_win.cc \
+browser/osr_accessibility_node.cc \
+browser/osr_accessibility_helper.cc \
 browser/osr_accessibility_node_win.cc \
 browser/osr_d3d11_win.cc \
 browser/osr_dragdrop_win.cc \
@@ -204,6 +256,8 @@ resources/win/cefclient.rc \
 browser/browser_window_osr_win.h \
 browser/browser_window_std_win.h \
 browser/main_message_loop_multithreaded_win.h \
+browser/osr_accessibility_helper.h \
+browser/osr_accessibility_node.h \
 browser/osr_d3d11_win.h \
 browser/osr_dragdrop_win.h \
 browser/osr_ime_handler_win.h \
@@ -226,4 +280,32 @@ DISTFILES += \
 RC_FILE = resources/win/cefclient.rc
 }
 unix: {
+SOURCES += \
+    cefclient_gtk.cc \
+    browser/browser_window_osr_gtk.cc \
+    browser/browser_window_std_gtk.cc \
+    browser/dialog_handler_gtk.cc \
+    browser/main_context_impl_posix.cc \
+    browser/main_message_loop_multithreaded_gtk.cc \
+    browser/print_handler_gtk.cc \
+    browser/resource_util_linux.cc \
+    browser/root_window_gtk.cc \
+    browser/temp_window_x11.cc \
+    browser/util_gtk.cc \
+    browser/window_test_runner_gtk.cc \
+    shared/browser/main_message_loop_external_pump_linux.cc \
+    shared/browser/resource_util_posix.cc
+
+HEADERS +=  \
+    browser/browser_window_osr_gtk.h \
+    browser/browser_window_std_gtk.h \
+    browser/dialog_handler_gtk.h \
+    browser/main_message_loop_multithreaded_gtk.h \
+    browser/print_handler_gtk.h \
+    browser/root_window_gtk.h \
+    browser/temp_window_x11.h \
+    browser/util_gtk.h \
+    browser/window_test_runner_gtk.h
+
+
 }

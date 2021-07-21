@@ -8,7 +8,6 @@
 ****************************************************************************/
 
 #include "ClientUtils.h"
-
 #include <include/cef_parser.h>
 
 // Replace all instances of |from| with |to| in |str|.
@@ -32,7 +31,7 @@ static std::string StringReplace(const std::string& str,
     return result;
 }
 
-namespace CefHandler
+namespace QCefKits
 {
 
 std::string GetDataURI(const std::string& data, const std::string& mime_type)
@@ -169,4 +168,5 @@ QCefKits_logLevel CefLogServerityToLogLevel(cef_log_severity_t l)
         return QCefKits_LogLevel_Disable;
     }
 }
-}  // namespace CefHandler
+
+}  // namespace QCefKits

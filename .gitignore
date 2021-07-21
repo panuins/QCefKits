@@ -58,3 +58,6 @@ compile_commands.json
 Thumbs.db
 cef/Windowsi386
 cef/Windowsx86_64
+cef/Linuxx86_64
+cef/Linuxarm64
+*.tar.bz2

@@ -5,7 +5,11 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    QCefKitsInit(argc, argv, QCefKitsSettings());
+    QCefKitsSettings cefsettings(argc, argv);
+//    cefsettings.backgroundColor = Qt::red;
+//    cefsettings.logFile = "/dev/stdout";
+//    cefsettings.multiThread = false;
+    QCefKitsInit(argc, argv, cefsettings);
 
     Widget w;
     w.show();

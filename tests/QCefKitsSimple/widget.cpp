@@ -1,5 +1,6 @@
 #include "widget.h"
 #include "ui_widget.h"
+#include <QCloseEvent>
 #include <QCefWidget.h>
 #include <QDebug>
 #include <QTimer>
@@ -13,7 +14,15 @@ Widget::Widget(QWidget *parent)
     m_browser = new QCefWidget(this);
     ui->verticalLayout->addWidget(m_browser, 10);
     m_browser->init(QUrl("https://github.com/panuins"));
+//    m_browser->init(QUrl(ui->lineEdit->text()));
     connectBrowserSignals();
+    connect(m_browser, &QCefWidget::browserClosed,
+            this, [this]()
+    {
+        qDebug() << "QCefWidget::browserClosed" << m_browser->hasCefBrowser();
+        m_browser->deleteLater();
+        close();
+    });
 }
 
 Widget::Widget(QCefWidget *browser, QWidget *parent)
@@ -31,6 +40,13 @@ Widget::Widget(QCefWidget *browser, QWidget *parent)
 //    m_browser->show();
     ui->verticalLayout->addWidget(m_browser, 10);
     connectBrowserSignals();
+    connect(m_browser, &QCefWidget::browserClosed,
+            this, [this]()
+    {
+        qDebug() << "QCefWidget::browserClosed" << m_browser->hasCefBrowser();
+        m_browser->deleteLater();
+        close();
+    });
 }
 
 Widget::~Widget()
@@ -40,11 +56,15 @@ Widget::~Widget()
 
 void Widget::closeEvent(QCloseEvent *event)
 {
-//    qDebug() << "Widget::closeEvent 1";
-    m_browser->closeBrowser();
-//    qDebug() << "Widget::closeEvent 2";
-    QWidget::closeEvent(event);
-//    qDebug() << "Widget::closeEvent 3";
+    if (m_browser->hasCefBrowser())
+    {
+        m_browser->closeBrowser();
+        event->ignore();
+    }
+    else
+    {
+        QWidget::closeEvent(event);
+    }
 }
 
 void Widget::on_pushButton_clicked()

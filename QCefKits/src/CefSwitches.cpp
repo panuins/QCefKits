@@ -9,7 +9,7 @@
 
 #include "CefSwitches.h"
 
-namespace CefHandler
+namespace QCefKits
 {
 namespace switches
 {

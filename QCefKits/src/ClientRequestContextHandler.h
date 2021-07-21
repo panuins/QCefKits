@@ -16,7 +16,7 @@
 #include <include/cef_web_plugin.h>
 #include <include/cef_command_line.h>
 
-namespace CefHandler
+namespace QCefKits
 {
 
 class ClientRequestContextHandler : public CefRequestContextHandler,

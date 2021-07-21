@@ -18,7 +18,7 @@
 class QCEFKITS_EXPORT QCefKitsSettings
 {
 public:
-    QCefKitsSettings();
+    QCefKitsSettings(int argc, char **argv);
 
     QString cachePath;
     QString subProcessPath;

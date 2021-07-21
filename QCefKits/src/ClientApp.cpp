@@ -18,7 +18,7 @@ static const char kRendererProcess[] = "renderer";
 static const char kZygoteProcess[] = "zygote";
 #endif
 
-namespace CefHandler
+namespace QCefKits
 {
 
 ClientApp::ClientApp() {}
@@ -54,4 +54,4 @@ void ClientApp::OnRegisterCustomSchemes(
 //    RegisterCustomSchemes(registrar, m_cookieable_schemes_);
 }
 
-}  // namespace CefHandler
+}  // namespace QCefKits
