@@ -6,6 +6,7 @@
 #define CEF_TESTS_CEFCLIENT_BROWSER_VIEWS_STYLE_H_
 #pragma once
 
+#include "include/cef_version.h"
 #include "include/cef_menu_model.h"
 #include "include/views/cef_label_button.h"
 #include "include/views/cef_panel.h"
@@ -19,6 +20,9 @@ namespace views_style {
 bool IsSet();
 
 // Apply style to views objects.
+#if CHROME_VERSION_MAJOR > 94
+void ApplyBackgroundTo(CefRefPtr<CefView> view);
+#endif
 void ApplyTo(CefRefPtr<CefPanel> panel);
 void ApplyTo(CefRefPtr<CefLabelButton> label_button);
 void ApplyTo(CefRefPtr<CefTextfield> textfield);

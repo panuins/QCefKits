@@ -5,7 +5,8 @@
 #ifndef CEF_TESTS_CEFCLIENT_BROWSER_DRM_TEST_H_
 #define CEF_TESTS_CEFCLIENT_BROWSER_DRM_TEST_H_
 #pragma once
-
+#include "include/cef_version.h"
+#if CHROME_VERSION_MAJOR < 95
 #include "browser/test_runner.h"
 
 namespace client {
@@ -17,4 +18,5 @@ void CreateMessageHandlers(test_runner::MessageHandlerSet& handlers);
 }  // namespace drm_test
 }  // namespace client
 
+#endif
 #endif  // CEF_TESTS_CEFCLIENT_BROWSER_DRM_TEST_H_

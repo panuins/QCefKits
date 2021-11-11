@@ -2,9 +2,14 @@
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 
+#include "include/cef_version.h"
 #include "browser/browser_window.h"
 
+#if CHROME_VERSION_MAJOR > 94
+#include "include/base/cef_callback.h"
+#else
 #include "include/base/cef_bind.h"
+#endif
 #include "shared/browser/main_message_loop.h"
 
 namespace client {

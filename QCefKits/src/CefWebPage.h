@@ -19,11 +19,12 @@
 #include <QWidget>
 
 class QCefWidget;
-
-#define LINUX_USING_X11_AS_MIDDLE_WINDOW
-//#define LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
+#ifdef Q_OS_LINUX
+//#define LINUX_USING_X11_AS_MIDDLE_WINDOW
+#define LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
 #ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
 #include <QWindow>
+#endif
 #endif
 
 class CefWebPage : public QObject, public QCefKits::ClientHandler::Delegate
@@ -158,10 +159,13 @@ private:
     QPointer<QCefWidget> m_widget;
 #ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
     QPointer<QWindow> m_parentWindow;
-    QPointer<QWidget> m_parentWidget;
+    QPointer<QWindow> m_middleWindow;
+    QPointer<QWindow> m_cefWindow;
 #elif defined(LINUX_USING_X11_AS_MIDDLE_WINDOW)
     WId m_parentWinid = 0;
 #endif
+
+    friend class QCefWidget;
 };
 
 #endif // CEFWEBPAGE_H

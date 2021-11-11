@@ -23,10 +23,10 @@ class ClientBrowserDelegate : public ClientAppBrowser::Delegate {
  public:
   ClientBrowserDelegate();
 
-  void OnContextInitialized(CefRefPtr<ClientAppBrowser> app) OVERRIDE;
+  void OnContextInitialized(CefRefPtr<ClientAppBrowser> app) override;
   void OnBeforeCommandLineProcessing(
       CefRefPtr<ClientAppBrowser> app,
-      CefRefPtr<CefCommandLine> command_line) OVERRIDE;
+      CefRefPtr<CefCommandLine> command_line) override;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(ClientBrowserDelegate);

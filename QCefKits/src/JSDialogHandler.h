@@ -24,7 +24,7 @@ public:
     };
     JSDialogHandler();
 
-    virtual int execPendingDialog() OVERRIDE;
+    virtual int execPendingDialog() override;
     virtual bool initJsDialog(const CefString& origin_url,
                               JSDialogType dialog_type,
                               const CefString& message_text,
@@ -36,13 +36,13 @@ public:
                             const CefString& message_text,
                             const CefString& default_prompt_text,
                             CefRefPtr<CefJSDialogCallback> callback,
-                            bool& suppress_message) OVERRIDE;
+                            bool& suppress_message) override;
     virtual bool OnBeforeUnloadDialog(CefRefPtr<CefBrowser> browser,
                                       const CefString& message_text,
                                       bool is_reload,
-                                      CefRefPtr<CefJSDialogCallback> callback) OVERRIDE;
-    virtual void OnResetDialogState(CefRefPtr<CefBrowser> browser) OVERRIDE;
-    virtual void OnDialogClosed(CefRefPtr<CefBrowser> browser) OVERRIDE;
+                                      CefRefPtr<CefJSDialogCallback> callback) override;
+    virtual void OnResetDialogState(CefRefPtr<CefBrowser> browser) override;
+    virtual void OnDialogClosed(CefRefPtr<CefBrowser> browser) override;
 
 protected:
     struct DialogInfo m_dialogInfo;

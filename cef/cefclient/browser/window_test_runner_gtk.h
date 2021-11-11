@@ -6,7 +6,7 @@
 #define CEF_TESTS_CEFCLIENT_BROWSER_WINDOW_TEST_RUNNER_GTK_H_
 #pragma once
 
-#include "tests/cefclient/browser/window_test_runner.h"
+#include "browser/window_test_runner.h"
 
 namespace client {
 namespace window_test {
@@ -20,10 +20,10 @@ class WindowTestRunnerGtk : public WindowTestRunner {
               int x,
               int y,
               int width,
-              int height) OVERRIDE;
-  void Minimize(CefRefPtr<CefBrowser> browser) OVERRIDE;
-  void Maximize(CefRefPtr<CefBrowser> browser) OVERRIDE;
-  void Restore(CefRefPtr<CefBrowser> browser) OVERRIDE;
+              int height) override;
+  void Minimize(CefRefPtr<CefBrowser> browser) override;
+  void Maximize(CefRefPtr<CefBrowser> browser) override;
+  void Restore(CefRefPtr<CefBrowser> browser) override;
 };
 
 }  // namespace window_test

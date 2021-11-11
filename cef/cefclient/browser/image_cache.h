@@ -9,7 +9,12 @@
 #include <map>
 #include <vector>
 
+#include "include/cef_version.h"
+#if CHROME_VERSION_MAJOR > 94
+#include "include/base/cef_callback.h"
+#else
 #include "include/base/cef_bind.h"
+#endif
 #include "include/base/cef_ref_counted.h"
 #include "include/cef_image.h"
 #include "include/wrapper/cef_closure_task.h"
@@ -33,7 +38,11 @@ class ImageCache
     // Image scale factor (usually 1.0f or 2.0f).
     float scale_factor_;
   };
-  typedef std::vector<ImageRep> ImageRepSet;
+  using ImageRepSet = std::vector<ImageRep>;
+//#if CHROME_VERSION_MAJOR > 94
+//#else
+//  typedef std::vector<ImageRep> ImageRepSet;
+//#endif
 
   // Unique image that may have multiple representations.
   struct ImageInfo {
@@ -67,16 +76,28 @@ class ImageCache
     // True to force reload.
     bool force_reload_;
   };
-  typedef std::vector<ImageInfo> ImageInfoSet;
+  using ImageInfoSet = std::vector<ImageInfo>;
+//  typedef std::vector<ImageInfo> ImageInfoSet;
 
-  typedef std::vector<CefRefPtr<CefImage>> ImageSet;
+  using ImageSet = std::vector<CefRefPtr<CefImage>>;
+//  typedef std::vector<CefRefPtr<CefImage>> ImageSet;
 
-  typedef base::Callback<void(const ImageSet& /*images*/)> LoadImagesCallback;
+#if CHROME_VERSION_MAJOR > 94
+  using LoadImagesCallback = base::OnceCallback<void(const ImageSet& /*images*/)>;
+#else
+  using LoadImagesCallback = base::Callback<void(const ImageSet& /*images*/)>;
+#endif
+//  typedef base::Callback<void(const ImageSet& /*images*/)> LoadImagesCallback;
 
   // Loads the images represented by |image_info|. Executes |callback|
   // either synchronously or asychronously on the UI thread after completion.
+#if CHROME_VERSION_MAJOR > 94
+  void LoadImages(const ImageInfoSet& image_info,
+                  LoadImagesCallback callback);
+#else
   void LoadImages(const ImageInfoSet& image_info,
                   const LoadImagesCallback& callback);
+#endif
 
   // Returns an image that has already been cached. Must be called on the
   // UI thread.
@@ -101,9 +122,15 @@ class ImageCache
   typedef std::vector<ImageContent> ImageContentSet;
 
   // Load missing image contents on the FILE thread.
+#if CHROME_VERSION_MAJOR > 94
+  void LoadMissing(const ImageInfoSet& image_info,
+                   const ImageSet& images,
+                   LoadImagesCallback callback);
+#else
   void LoadMissing(const ImageInfoSet& image_info,
                    const ImageSet& images,
                    const LoadImagesCallback& callback);
+#endif
   static bool LoadImageContents(const ImageInfo& info, ImageContent* content);
   static bool LoadImageContents(const std::string& path,
                                 bool internal,
@@ -111,9 +138,15 @@ class ImageCache
                                 std::string* contents);
 
   // Create missing CefImage representations on the UI thread.
+#if CHROME_VERSION_MAJOR > 94
+  void UpdateCache(const ImageInfoSet& image_info,
+                   const ImageContentSet& contents,
+                   LoadImagesCallback callback);
+#else
   void UpdateCache(const ImageInfoSet& image_info,
                    const ImageContentSet& contents,
                    const LoadImagesCallback& callback);
+#endif
   static CefRefPtr<CefImage> CreateImage(const std::string& image_id,
                                          const ImageContent& content);
 

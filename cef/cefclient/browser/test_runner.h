@@ -9,6 +9,7 @@
 #include <set>
 #include <string>
 
+#include "include/cef_version.h"
 #include "include/cef_browser.h"
 #include "include/cef_request.h"
 #include "include/wrapper/cef_message_router.h"

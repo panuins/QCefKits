@@ -2,7 +2,7 @@
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 
-#include "tests/cefclient/browser/browser_window_osr_gtk.h"
+#include "browser/browser_window_osr_gtk.h"
 
 #include <GL/gl.h>
 #include <gdk/gdk.h>
@@ -16,12 +16,18 @@
 #include <X11/Xcursor/Xcursor.h>
 #include <X11/keysym.h>
 
+#include <algorithm>
+
+#include "include/cef_version.h"
+#if CHROME_VERSION_MAJOR > 94
+#include "include/base/cef_cxx17_backports.h"
+#endif
 #include "include/base/cef_logging.h"
 #include "include/base/cef_macros.h"
 #include "include/wrapper/cef_closure_task.h"
-#include "tests/cefclient/browser/util_gtk.h"
-#include "tests/shared/browser/geometry_util.h"
-#include "tests/shared/browser/main_message_loop.h"
+#include "browser/util_gtk.h"
+#include "shared/browser/geometry_util.h"
+#include "shared/browser/main_message_loop.h"
 
 namespace client {
 
@@ -788,7 +794,11 @@ KeyboardCode GdkEventToWindowsKeyCode(const GdkEventKey* event) {
   if (windows_key_code)
     return windows_key_code;
 
+#if CHROME_VERSION_MAJOR > 94
+  if (event->hardware_keycode < base::size(kHardwareCodeToGDKKeyval)) {
+#else
   if (event->hardware_keycode < arraysize(kHardwareCodeToGDKKeyval)) {
+#endif
     int keyval = kHardwareCodeToGDKKeyval[event->hardware_keycode];
     if (keyval)
       return KeyboardCodeFromXKeysym(keyval);
@@ -907,7 +917,7 @@ class ScopedGLContext {
   ScopedGLContext(GtkWidget* widget, bool swap_buffers)
       : swap_buffers_(swap_buffers), widget_(widget) {
     gtk_gl_area_make_current(GTK_GL_AREA(widget));
-    is_valid_ = gtk_gl_area_get_error(GTK_GL_AREA(widget)) == NULL;
+    is_valid_ = gtk_gl_area_get_error(GTK_GL_AREA(widget)) == nullptr;
     if (swap_buffers_ && is_valid_) {
       gtk_gl_area_queue_render(GTK_GL_AREA(widget_));
       gtk_gl_area_attach_buffers(GTK_GL_AREA(widget));
@@ -939,7 +949,7 @@ BrowserWindowOsrGtk::BrowserWindowOsrGtk(BrowserWindow::Delegate* delegate,
       gl_enabled_(false),
       painting_popup_(false),
       hidden_(false),
-      glarea_(NULL),
+      glarea_(nullptr),
       drag_trigger_event_(nullptr),
       drag_data_(nullptr),
       drag_operation_(DRAG_OPERATION_NONE),
@@ -1038,7 +1048,12 @@ void BrowserWindowOsrGtk::Show() {
   }
 
   // Give focus to the browser.
+
+#if CHROME_VERSION_MAJOR > 94
+  browser_->GetHost()->SetFocus(true);
+#else
   browser_->GetHost()->SendFocusEvent(true);
+#endif
 }
 
 void BrowserWindowOsrGtk::Hide() {
@@ -1048,7 +1063,11 @@ void BrowserWindowOsrGtk::Hide() {
     return;
 
   // Remove focus from the browser.
+#if CHROME_VERSION_MAJOR > 94
+  browser_->GetHost()->SetFocus(false);
+#else
   browser_->GetHost()->SendFocusEvent(false);
+#endif
 
   if (!hidden_) {
     // Set the browser as hidden.
@@ -1115,8 +1134,8 @@ void BrowserWindowOsrGtk::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
   UnregisterDragDrop();
 
   // Disconnect all signal handlers that reference |this|.
-  g_signal_handlers_disconnect_matched(glarea_, G_SIGNAL_MATCH_DATA, 0, 0, NULL,
-                                       NULL, this);
+  g_signal_handlers_disconnect_matched(glarea_, G_SIGNAL_MATCH_DATA, 0, 0, nullptr,
+                                       nullptr, this);
 
   DisableGL();
 }
@@ -1645,7 +1664,12 @@ gint BrowserWindowOsrGtk::FocusEvent(GtkWidget* widget,
                                      BrowserWindowOsrGtk* self) {
   // May be called on the main thread and the UI thread.
   if (self->browser_.get())
-    self->browser_->GetHost()->SendFocusEvent(event->in == TRUE);
+#if CHROME_VERSION_MAJOR > 94
+      self->browser_->GetHost()->SetFocus(event->in == TRUE);
+#else
+      self->browser_->GetHost()->SendFocusEvent(event->in == TRUE);
+#endif
+
   return TRUE;
 }
 
@@ -1775,7 +1799,7 @@ void BrowserWindowOsrGtk::RegisterDragDrop() {
   // Default values for drag threshold are set to 8 pixels in both GTK and
   // Chromium, but doesn't work as expected.
   // --OFF--
-  // gtk_drag_source_set(glarea_, GDK_BUTTON1_MASK, NULL, 0, GDK_ACTION_COPY);
+  // gtk_drag_source_set(glarea_, GDK_BUTTON1_MASK, nullptr, 0, GDK_ACTION_COPY);
 
   // Source widget events.
   g_signal_connect(G_OBJECT(glarea_), "drag_begin",
@@ -1786,7 +1810,7 @@ void BrowserWindowOsrGtk::RegisterDragDrop() {
                    G_CALLBACK(&BrowserWindowOsrGtk::DragEnd), this);
 
   // Destination widget and its events.
-  gtk_drag_dest_set(glarea_, (GtkDestDefaults)0, (GtkTargetEntry*)NULL, 0,
+  gtk_drag_dest_set(glarea_, (GtkDestDefaults)0, (GtkTargetEntry*)nullptr, 0,
                     (GdkDragAction)GDK_ACTION_COPY);
   g_signal_connect(G_OBJECT(glarea_), "drag_motion",
                    G_CALLBACK(&BrowserWindowOsrGtk::DragMotion), this);
@@ -1859,9 +1883,9 @@ void BrowserWindowOsrGtk::DragBegin(GtkWidget* widget,
   gboolean success = FALSE;
   loader = gdk_pixbuf_loader_new_with_type("png", &error);
   if (error == nullptr && loader) {
-    success = gdk_pixbuf_loader_write(loader, image_buffer, image_size, NULL);
+      success = gdk_pixbuf_loader_write(loader, image_buffer, image_size, nullptr);
     if (success) {
-      success = gdk_pixbuf_loader_close(loader, NULL);
+      success = gdk_pixbuf_loader_close(loader, nullptr);
       if (success) {
         pixbuf = gdk_pixbuf_loader_get_pixbuf(loader);
         if (pixbuf) {

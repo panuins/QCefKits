@@ -8,24 +8,28 @@
 #undef Success     // Definition conflicts with cef_message_router.h
 #undef RootWindow  // Definition conflicts with root_window.h
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <unistd.h>
+#include <memory>
 #include <string>
 
 #include "include/base/cef_logging.h"
+#include "include/cef_version.h"
+#if CHROME_VERSION_MAJOR < 95
 #include "include/base/cef_scoped_ptr.h"
+#endif
 #include "include/cef_app.h"
 #include "include/cef_command_line.h"
 #include "include/wrapper/cef_helpers.h"
-#include "tests/cefclient/browser/main_context_impl.h"
-#include "tests/cefclient/browser/main_message_loop_multithreaded_gtk.h"
-#include "tests/cefclient/browser/test_runner.h"
-#include "tests/shared/browser/client_app_browser.h"
-#include "tests/shared/browser/main_message_loop_external_pump.h"
-#include "tests/shared/browser/main_message_loop_std.h"
-#include "tests/shared/common/client_app_other.h"
-#include "tests/shared/common/client_switches.h"
-#include "tests/shared/renderer/client_app_renderer.h"
+#include "browser/main_context_impl.h"
+#include "browser/main_message_loop_multithreaded_gtk.h"
+#include "browser/test_runner.h"
+#include "shared/browser/client_app_browser.h"
+#include "shared/browser/main_message_loop_external_pump.h"
+#include "shared/browser/main_message_loop_std.h"
+#include "shared/common/client_app_other.h"
+#include "shared/common/client_switches.h"
+#include "shared/renderer/client_app_renderer.h"
 
 namespace client {
 namespace {
@@ -83,7 +87,11 @@ int RunMain(int argc, char* argv[]) {
     return exit_code;
 
   // Create the main context object.
+#if CHROME_VERSION_MAJOR > 94
+  auto context = std::make_unique<MainContextImpl>(command_line, true);
+#else
   scoped_ptr<MainContextImpl> context(new MainContextImpl(command_line, true));
+#endif
 
   CefSettings settings;
 
@@ -101,11 +109,19 @@ int RunMain(int argc, char* argv[]) {
     // Force the app to use OpenGL <= 3.1 when off-screen rendering is enabled.
     // TODO(cefclient): Rewrite OSRRenderer to use shaders instead of the
     // fixed-function pipeline which was removed in OpenGL 3.2 (back in 2009).
+#if CHROME_VERSION_MAJOR > 94
     setenv("MESA_GL_VERSION_OVERRIDE", "3.1", /*overwrite=*/0);
+#else
+    setenv("MESA_GL_VERSION_override", "3.1", /*overwrite=*/0);
+#endif
   }
 
   // Create the main message loop object.
+#if CHROME_VERSION_MAJOR > 94
+  std::unique_ptr<MainMessageLoop> message_loop;
+#else
   scoped_ptr<MainMessageLoop> message_loop;
+#endif
   if (settings.multi_threaded_message_loop)
     message_loop.reset(new MainMessageLoopMultithreadedGtk);
   else if (settings.external_message_pump)
@@ -135,6 +151,16 @@ int RunMain(int argc, char* argv[]) {
   // Register scheme handlers.
   test_runner::RegisterSchemeHandlers();
 
+#if CHROME_VERSION_MAJOR > 94
+  auto window_config = std::make_unique<RootWindowConfig>();
+  window_config->always_on_top = command_line->HasSwitch(switches::kAlwaysOnTop);
+  window_config->with_controls =
+      !command_line->HasSwitch(switches::kHideControls);
+  window_config->with_osr = settings.windowless_rendering_enabled ? true : false;
+
+  // Create the first window.
+  context->GetRootWindowManager()->CreateRootWindow(std::move(window_config));
+#else
   RootWindowConfig window_config;
   window_config.always_on_top = command_line->HasSwitch(switches::kAlwaysOnTop);
   window_config.with_controls =
@@ -143,6 +169,7 @@ int RunMain(int argc, char* argv[]) {
 
   // Create the first window.
   context->GetRootWindowManager()->CreateRootWindow(window_config);
+#endif
 
   // Run the message loop. This will block until Quit() is called.
   int result = message_loop->Run();

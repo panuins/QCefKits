@@ -30,13 +30,13 @@ QCefWidget::~QCefWidget()
 {
     qDebug() << "QCefWidget::~QCefWidget";
     closeBrowser();
-    while (hasCefBrowser())
+    if (hasCefBrowser())
     {
         if (QCefKits::g_cefSettings.external_message_pump)
         {
             CefDoMessageLoopWork();
         }
-        QThread::msleep(10);
+        //QThread::msleep(10);
     }
 }
 
@@ -72,11 +72,18 @@ void QCefWidget::setWebPage(QSharedPointer<CefWebPage> page)
     connect(m_page.data(), &CefWebPage::newBrowserRequest,
             this, [](QSharedPointer<CefWebPage> page)
     {
+//        qDebug() << "CefWebPage::newBrowserRequest begin";
         QCefWidget *newBrowser = new QCefWidget;
         //These operation must done in main thread, or newBrowser can not set new parent.
         page->setCefWidget(newBrowser);
-        newBrowser->winId();
+#ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
+//        page->m_parentWindow = QWindow::fromWinId(newBrowser->winId());
+        page->m_middleWindow = new QWindow;
+        page->m_middleWindow->winId();
+#endif
+//        newBrowser->winId();
         newBrowser->setWebPage(page);
+//        qDebug() << "CefWebPage::newBrowserRequest end";
     },
     (QCefKits::g_cefSettings.multi_threaded_message_loop == 0) ? Qt::AutoConnection : Qt::BlockingQueuedConnection);
 }
@@ -161,14 +168,14 @@ void QCefWidget::enterEvent(QEvent *event)
 {
 //    qDebug() << "QCefWidget::enterEvent";
     QWidget::enterEvent(event);
-//    setBrowserFocus(true);
+    setBrowserFocus(true);
 }
 
 void QCefWidget::leaveEvent(QEvent *event)
 {
 //    qDebug() << "QCefWidget::leaveEvent";
     QWidget::leaveEvent(event);
-//    setBrowserFocus(false);
+    setBrowserFocus(false);
 }
 
 void QCefWidget::onBrowserCreated()

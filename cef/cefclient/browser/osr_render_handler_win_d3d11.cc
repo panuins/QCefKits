@@ -4,7 +4,11 @@
 
 #include "browser/osr_render_handler_win_d3d11.h"
 
+#if CHROME_VERSION_MAJOR > 94
+#include "include/base/cef_callback.h"
+#else
 #include "include/base/cef_bind.h"
+#endif
 #include "include/wrapper/cef_closure_task.h"
 #include "include/wrapper/cef_helpers.h"
 #include "shared/browser/util_win.h"

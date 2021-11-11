@@ -6,7 +6,12 @@
 
 #include <shellscalingapi.h>
 
+#include "include/cef_version.h"
+#if CHROME_VERSION_MAJOR > 94
+#include "include/base/cef_callback.h"
+#else
 #include "include/base/cef_bind.h"
+#endif
 #include "include/base/cef_build.h"
 #include "include/cef_app.h"
 #include "browser/browser_window_osr_win.h"

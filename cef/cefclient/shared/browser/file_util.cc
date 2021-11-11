@@ -4,13 +4,16 @@
 
 #include "shared/browser/file_util.h"
 
-#include "include/base/cef_build.h"
-#include "include/base/cef_scoped_ptr.h"
-#include "include/cef_task.h"
-
 #include <algorithm>
 #include <cstdio>
 #include <memory>
+
+#include "include/cef_version.h"
+#include "include/base/cef_build.h"
+#if CHROME_VERSION_MAJOR < 95
+#include "include/base/cef_scoped_ptr.h"
+#endif
+#include "include/cef_task.h"
 
 namespace client {
 namespace file_util {
@@ -46,7 +49,11 @@ bool ReadFileToString(const std::string& path,
     return false;
 
   const size_t kBufferSize = 1 << 16;
+#if CHROME_VERSION_MAJOR > 94
+  std::unique_ptr<char[]> buf(new char[kBufferSize]);
+#else
   scoped_ptr<char[]> buf(new char[kBufferSize]);
+#endif
   size_t len;
   size_t size = 0;
   bool read_status = true;

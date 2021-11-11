@@ -6,9 +6,11 @@
 #define CEF_TESTS_CEFCLIENT_BROWSER_ROOT_WINDOW_H_
 #pragma once
 
+#include <memory>
 #include <set>
 #include <string>
 
+#include "include/cef_version.h"
 #include "include/base/cef_callback_forward.h"
 #include "include/base/cef_ref_counted.h"
 #include "include/cef_browser.h"
@@ -57,7 +59,11 @@ struct RootWindowConfig {
 
   // Callback to be executed when the window is closed. Will be executed on the
   // main thread. This is currently only implemented for Views-based windows.
+#if CHROME_VERSION_MAJOR > 94
+  base::OnceClosure close_callback;
+#else
   base::Closure close_callback;
+#endif
 
   // Initial URL to load.
   std::string url;
@@ -76,7 +82,7 @@ class RootWindow
   class Delegate {
    public:
     // Called to retrieve the CefRequestContext for browser. Only called for
-    // non-popup browsers. May return NULL.
+    // non-popup browsers. May return nullptr.
     virtual CefRefPtr<CefRequestContext> GetRequestContext(
         RootWindow* root_window) = 0;
 
@@ -104,7 +110,11 @@ class RootWindow
     virtual void CreateExtensionWindow(CefRefPtr<CefExtension> extension,
                                        const CefRect& source_bounds,
                                        CefRefPtr<CefWindow> parent_window,
+#if CHROME_VERSION_MAJOR > 94
+                                       base::OnceClosure close_callback,
+#else
                                        const base::Closure& close_callback,
+#endif
                                        bool with_osr) = 0;
 
    protected:
@@ -129,17 +139,21 @@ class RootWindow
 
   // Initialize as a normal window. This will create and show a native window
   // hosting a single browser instance. This method may be called on any thread.
-  // |delegate| must be non-NULL and outlive this object.
+  // |delegate| must be non-nullptr and outlive this object.
   // Use RootWindowManager::CreateRootWindow() instead of calling this method
   // directly.
   virtual void Init(RootWindow::Delegate* delegate,
+#if CHROME_VERSION_MAJOR > 94
+                    std::unique_ptr<RootWindowConfig> config,
+#else
                     const RootWindowConfig& config,
+#endif
                     const CefBrowserSettings& settings) = 0;
 
   // Initialize as a popup window. This is used to attach a new native window to
   // a single browser instance that will be created later. The native window
   // will be created and shown once the browser is available. This method may be
-  // called on any thread. |delegate| must be non-NULL and outlive this object.
+  // called on any thread. |delegate| must be non-nullptr and outlive this object.
   // Use RootWindowManager::CreateRootWindowAsPopup() instead of calling this
   // method directly. Called on the UI thread.
   virtual void InitAsPopup(RootWindow::Delegate* delegate,

@@ -30,17 +30,17 @@ class ClientRequestContextHandler : public CefRequestContextHandler,
                           bool is_main_frame,
                           const CefString& top_origin_url,
                           CefRefPtr<CefWebPluginInfo> plugin_info,
-                          PluginPolicy* plugin_policy) OVERRIDE;
+                          PluginPolicy* plugin_policy) override;
 
   void OnRequestContextInitialized(
-      CefRefPtr<CefRequestContext> request_context) OVERRIDE;
+      CefRefPtr<CefRequestContext> request_context) override;
 
   // CefExtensionHandler methods:
-  void OnExtensionLoaded(CefRefPtr<CefExtension> extension) OVERRIDE;
+  void OnExtensionLoaded(CefRefPtr<CefExtension> extension) override;
 
   CefRefPtr<CefBrowser> GetActiveBrowser(CefRefPtr<CefExtension> extension,
                                          CefRefPtr<CefBrowser> browser,
-                                         bool include_incognito) OVERRIDE;
+                                         bool include_incognito) override;
 
  private:
   IMPLEMENT_REFCOUNTING(ClientRequestContextHandler);

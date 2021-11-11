@@ -35,6 +35,8 @@ int APIENTRY wWinMain(HINSTANCE hInstance,
 int main(int argc, char **argv)
 {
 //    std::cout << "main: 0" << std::endl;
+    //char envstr[] = "QT_QPA_PLATFORMTHEME=gtk3";
+    //putenv(envstr);
     CefMainArgs main_args(argc, argv);
 #elif defined(OS_MAC)
 int main(int argc, char **argv)
@@ -86,9 +88,9 @@ int main(int argc, char **argv)
 //        std::cout << "main: ClientAppOther" << std::endl;
         app = new ClientAppOther();
     }
-//    std::cout << "main: 2" << std::endl;
+    std::cout << "main: 2" << std::endl;
 
     int exit_code = CefExecuteProcess(main_args, app, sandbox_info);
-//    std::cout << "main: 3" << std::endl;
+    std::cout << "main: 3" << std::endl;
     return exit_code;
 }

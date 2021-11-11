@@ -14,6 +14,9 @@
 
 #include <set>
 
+namespace QCefKits
+{
+
 // Client app implementation for the renderer process.
 class ClientAppRenderer : public ClientApp, public CefRenderProcessHandler
 {
@@ -121,5 +124,5 @@ private:
     IMPLEMENT_REFCOUNTING(ClientAppRenderer);
     DISALLOW_COPY_AND_ASSIGN(ClientAppRenderer);
 };
-
+}
 #endif // CLIENTAPPRENDERER_H

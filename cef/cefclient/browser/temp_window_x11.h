@@ -6,6 +6,7 @@
 #define CEF_TESTS_CEFCLIENT_BROWSER_TEMP_WINDOW_X11_H_
 #pragma once
 
+#include "include/cef_version.h"
 #include "include/cef_base.h"
 
 namespace client {
@@ -21,7 +22,11 @@ class TempWindowX11 {
   // A single instance will be created/owned by RootWindowManager.
   friend class RootWindowManager;
   // Allow deletion via scoped_ptr only.
+#if CHROME_VERSION_MAJOR > 94
+  friend std::default_delete<TempWindowX11>;
+#else
   friend struct base::DefaultDeleter<TempWindowX11>;
+#endif
 
   TempWindowX11();
   ~TempWindowX11();

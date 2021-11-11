@@ -12,6 +12,7 @@
 #include <include/base/cef_logging.h>
 #include <include/cef_cookie.h>
 #include "CefSwitches.h"
+#include <QDebug>
 
 namespace QCefKits
 {
@@ -19,6 +20,11 @@ namespace QCefKits
 ClientAppBrowser::ClientAppBrowser()
 {
     CreateDelegates(m_delegates_);
+}
+
+ClientAppBrowser::~ClientAppBrowser()
+{
+    qDebug() << "ClientAppBrowser::~ClientAppBrowser";
 }
 
 void ClientAppBrowser::OnBeforeCommandLineProcessing(
@@ -30,7 +36,7 @@ void ClientAppBrowser::OnBeforeCommandLineProcessing(
 //    command_line->AppendSwitch("disable-gpu");
 //    command_line->AppendSwitch("disable-gpu-compositing");
 //    command_line->AppendSwitch("disable-gpu-sandbox");
-//    command_line->AppendSwitch("no-zygote");
+    command_line->AppendSwitch("no-zygote");  //In ubuntu zygote will cause cef window couldn't shown.
 //    command_line->AppendSwitch("no-sandbox");
 //    command_line->AppendSwitch("headless");
 #endif
@@ -89,6 +95,18 @@ void ClientAppBrowser::OnBeforeCommandLineProcessing(
 //        include_defaults = true;
 //    }
 //}
+
+CefRefPtr<CefResourceBundleHandler> ClientAppBrowser::GetResourceBundleHandler()
+{
+    //qDebug() << "ClientAppBrowser::GetResourceBundleHandler";
+    return nullptr;
+}
+
+CefRefPtr<CefRenderProcessHandler> ClientAppBrowser::GetRenderProcessHandler()
+{
+    qDebug() << "ClientAppBrowser::GetRenderProcessHandler";
+    return nullptr;
+}
 
 void ClientAppBrowser::OnContextInitialized()
 {

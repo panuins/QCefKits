@@ -10,8 +10,10 @@
 #ifndef CLIENTAPP_H
 #define CLIENTAPP_H
 
-#include <include/cef_app.h>
 #include <vector>
+#include <memory>
+#include <string>
+#include <include/cef_app.h>
 
 namespace QCefKits
 {
@@ -40,7 +42,7 @@ protected:
 private:
     // CefApp methods.
     void OnRegisterCustomSchemes(
-            CefRawPtr<CefSchemeRegistrar> registrar) OVERRIDE;
+            CefRawPtr<CefSchemeRegistrar> registrar) override;
 
     DISALLOW_COPY_AND_ASSIGN(ClientApp);
 };

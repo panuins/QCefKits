@@ -38,6 +38,7 @@ public:
     };
 
     ClientAppBrowser();
+    ~ClientAppBrowser();
 
 private:
     // Creates all of the Delegate objects. Implemented by cefclient in
@@ -51,23 +52,26 @@ private:
     // CefApp methods.
     void OnBeforeCommandLineProcessing(
             const CefString& process_type,
-            CefRefPtr<CefCommandLine> command_line) OVERRIDE;
-    CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() OVERRIDE
+            CefRefPtr<CefCommandLine> command_line) override;
+    CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() override
     {
         return this;
     }
 
+    virtual CefRefPtr<CefResourceBundleHandler> GetResourceBundleHandler() override;
+    virtual CefRefPtr<CefRenderProcessHandler> GetRenderProcessHandler() override;
+
     // CefBrowserProcessHandler methods.
 //    void GetCookieableSchemes(std::vector<CefString>& schemes,
-//                              bool& include_defaults) OVERRIDE;
-    void OnContextInitialized() OVERRIDE;
+//                              bool& include_defaults) override;
+    void OnContextInitialized() override;
     void OnBeforeChildProcessLaunch(
-            CefRefPtr<CefCommandLine> command_line) OVERRIDE;
-//    CefRefPtr<CefPrintHandler> GetPrintHandler() OVERRIDE
+            CefRefPtr<CefCommandLine> command_line) override;
+//    CefRefPtr<CefPrintHandler> GetPrintHandler() override
 //    {
 //        return m_print_handler_;
 //    }
-    void OnScheduleMessagePumpWork(int64 delay) OVERRIDE;
+    void OnScheduleMessagePumpWork(int64 delay) override;
 
     // Set of supported Delegates.
     std::set<CefRefPtr<Delegate> > m_delegates_;

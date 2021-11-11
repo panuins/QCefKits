@@ -13,7 +13,7 @@ Widget::Widget(QWidget *parent)
     ui->setupUi(this);
     m_browser = new QCefWidget(this);
     ui->verticalLayout->addWidget(m_browser, 10);
-    m_browser->init(QUrl("https://github.com/panuins"));
+    m_browser->init(QUrl("http://192.168.222.1"));
 //    m_browser->init(QUrl(ui->lineEdit->text()));
     connectBrowserSignals();
     connect(m_browser, &QCefWidget::browserClosed,
@@ -64,6 +64,8 @@ void Widget::closeEvent(QCloseEvent *event)
     else
     {
         QWidget::closeEvent(event);
+        //qDebug() << "Widget::closeEvent" << qApp->allWindows();
+//        deleteLater();
     }
 }
 

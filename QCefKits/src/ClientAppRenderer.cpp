@@ -8,23 +8,19 @@
 ****************************************************************************/
 
 #include "ClientAppRenderer.h"
-#include "ClientRenderDelegate.h"
 #include "include/base/cef_logging.h"
-#include <iostream>
+#include <QDebug>
+
+namespace QCefKits
+{
 
 ClientAppRenderer::ClientAppRenderer()
 {
-    CreateDelegates(m_delegates_);
-}
-
-void ClientAppRenderer::CreateDelegates(std::set<CefRefPtr<Delegate> >& delegates)
-{
-    ClientRenderDelegate::CreateDelegates(delegates);
 }
 
 void ClientAppRenderer::OnWebKitInitialized()
 {
-    //std::cout << "ClientAppRenderer::OnWebKitInitialized" << std::endl;
+    qDebug() << "ClientAppRenderer::OnWebKitInitialized";
     std::set<CefRefPtr<Delegate> >::iterator it = m_delegates_.begin();
     for (; it != m_delegates_.end(); ++it)
     {
@@ -36,7 +32,7 @@ void ClientAppRenderer::OnBrowserCreated(
         CefRefPtr<CefBrowser> browser,
         CefRefPtr<CefDictionaryValue> extra_info)
 {
-    //std::cout << "ClientAppRenderer::OnBrowserCreated" << std::endl;
+    qDebug() << "ClientAppRenderer::OnBrowserCreated";
     std::set<CefRefPtr<Delegate> >::iterator it = m_delegates_.begin();
     for (; it != m_delegates_.end(); ++it)
     {
@@ -46,7 +42,7 @@ void ClientAppRenderer::OnBrowserCreated(
 
 void ClientAppRenderer::OnBrowserDestroyed(CefRefPtr<CefBrowser> browser)
 {
-    //std::cout << "ClientAppRenderer::OnBrowserDestroyed" << std::endl;
+    qDebug() << "ClientAppRenderer::OnBrowserDestroyed";
     std::set<CefRefPtr<Delegate> >::iterator it = m_delegates_.begin();
     for (; it != m_delegates_.end(); ++it)
     {
@@ -70,7 +66,6 @@ void ClientAppRenderer::OnContextCreated(CefRefPtr<CefBrowser> browser,
                                          CefRefPtr<CefFrame> frame,
                                          CefRefPtr<CefV8Context> context)
 {
-    //std::cout << "ClientAppRenderer::OnContextCreated" << std::endl;
     std::set<CefRefPtr<Delegate> >::iterator it = m_delegates_.begin();
     for (; it != m_delegates_.end(); ++it)
     {
@@ -82,7 +77,6 @@ void ClientAppRenderer::OnContextReleased(CefRefPtr<CefBrowser> browser,
                                           CefRefPtr<CefFrame> frame,
                                           CefRefPtr<CefV8Context> context)
 {
-    //std::cout << "ClientAppRenderer::OnContextReleased" << std::endl;
     std::set<CefRefPtr<Delegate> >::iterator it = m_delegates_.begin();
     for (; it != m_delegates_.end(); ++it)
     {
@@ -97,7 +91,6 @@ void ClientAppRenderer::OnUncaughtException(
         CefRefPtr<CefV8Exception> exception,
         CefRefPtr<CefV8StackTrace> stackTrace)
 {
-    //std::cout << "ClientAppRenderer::OnUncaughtException" << std::endl;
     std::set<CefRefPtr<Delegate> >::iterator it = m_delegates_.begin();
     for (; it != m_delegates_.end(); ++it)
     {
@@ -110,7 +103,6 @@ void ClientAppRenderer::OnFocusedNodeChanged(CefRefPtr<CefBrowser> browser,
                                              CefRefPtr<CefFrame> frame,
                                              CefRefPtr<CefDOMNode> node)
 {
-    //std::cout << "ClientAppRenderer::OnFocusedNodeChanged" << std::endl;
     std::set<CefRefPtr<Delegate> >::iterator it = m_delegates_.begin();
     for (; it != m_delegates_.end(); ++it)
     {
@@ -136,4 +128,5 @@ bool ClientAppRenderer::OnProcessMessageReceived(
     }
 
     return handled;
+}
 }

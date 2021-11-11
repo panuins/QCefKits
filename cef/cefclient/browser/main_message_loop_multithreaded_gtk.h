@@ -10,9 +10,10 @@
 
 #include <gdk/gdk.h>
 
+#include "include/cef_version.h"
 #include "include/base/cef_lock.h"
 #include "include/base/cef_platform_thread.h"
-#include "tests/shared/browser/main_message_loop.h"
+#include "shared/browser/main_message_loop.h"
 
 namespace client {
 
@@ -26,10 +27,10 @@ class MainMessageLoopMultithreadedGtk : public MainMessageLoop {
   ~MainMessageLoopMultithreadedGtk();
 
   // MainMessageLoop methods.
-  int Run() OVERRIDE;
-  void Quit() OVERRIDE;
-  void PostTask(CefRefPtr<CefTask> task) OVERRIDE;
-  bool RunsTasksOnCurrentThread() const OVERRIDE;
+  int Run() override;
+  void Quit() override;
+  void PostTask(CefRefPtr<CefTask> task) override;
+  bool RunsTasksOnCurrentThread() const override;
 
  private:
   static int TriggerRunTasks(void* self);

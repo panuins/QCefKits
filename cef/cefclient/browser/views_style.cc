@@ -49,6 +49,15 @@ bool IsSet() {
   return g_background_color != 0;
 }
 
+#if CHROME_VERSION_MAJOR > 94
+void ApplyBackgroundTo(CefRefPtr<CefView> view) {
+    if (!IsSet())
+      return;
+
+    view->SetBackgroundColor(g_background_color);
+}
+#endif
+
 void ApplyTo(CefRefPtr<CefPanel> panel) {
   if (!IsSet())
     return;

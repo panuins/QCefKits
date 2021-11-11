@@ -6,6 +6,7 @@
 #define CEF_TESTS_CEFCLIENT_BROWSER_WINDOW_TEST_RUNNER_H_
 #pragma once
 
+#include "include/cef_version.h"
 #include "include/cef_browser.h"
 
 namespace client {

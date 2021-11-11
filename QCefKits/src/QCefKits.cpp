@@ -10,13 +10,17 @@
 #include "../include/QCefKits.h"
 #include "ClientUtils.h"
 #include "src/ClientAppBrowser.h"
+#include "src/ClientAppRenderer.h"
 #include "src/CefWebPage.h"
 #include "../include/QCefWidget.h"
 #include "src/QCefKits_internal.h"
+#include "IPendingDialog.h"
 #include <include/cef_app.h>
+#include <include/cef_version.h>
+#include <include/capi/cef_app_capi.h>
+#include <QApplication>
 #include <QDebug>
 #include <QTimer>
-#include "IPendingDialog.h"
 #include <QMutexLocker>
 #ifdef Q_OS_LINUX
 #include "X11Utils.h"
@@ -47,7 +51,6 @@ CefRefPtr<IPendingDialog> popPendingDialog()
 
 using QCefKits::g_cefSettings;
 using QCefKits::g_timer;
-using QCefKits::g_cefSettings;
 
 static void copySettings(const QCefKitsSettings& settings)
 {
@@ -84,10 +87,12 @@ static void copySettings(const QCefKitsSettings& settings)
     {
         CefString(&g_cefSettings.user_agent) = settings.userAgent.toStdWString();
     }
+#if CEF_VERSION_MAJOR >= 90
     if (!settings.userAgentProduction.isEmpty())
     {
         CefString(&g_cefSettings.user_agent_product) = settings.userAgentProduction.toStdWString();
     }
+#endif
     if (!settings.userDataPath.isEmpty())
     {
         CefString(&g_cefSettings.user_data_path) = settings.userDataPath.toStdWString();
@@ -127,17 +132,21 @@ static bool initCef(CefMainArgs &main_args)
         }
         else
         {
+//            qDebug() << "QTimer::timeout" << qApp->allWindows();
             while (QCefKits::g_pendingDialogs.size() > 0)
             {
+                CefSetOSModalLoop(true);
                 CefRefPtr<QCefKits::IPendingDialog> dialog = QCefKits::popPendingDialog();
                 dialog->execPendingDialog();
+                CefSetOSModalLoop(false);
             }
         }
     });
     CefRefPtr<CefApp> app(new QCefKits::ClientAppBrowser());
 #ifdef Q_OS_LINUX
-    QCefKits::SetXErrorHandler();
+//    QCefKits::SetXErrorHandler();
 #endif
+    CefExecuteProcess(main_args, new QCefKits::ClientAppRenderer(), nullptr);
     return CefInitialize(main_args, g_cefSettings, app, nullptr);
 }
 
@@ -152,6 +161,7 @@ bool QCEFKITS_EXPORT QCefKitsInit_win(HINSTANCE hInstance, const QCefKitsSetting
 
 bool QCEFKITS_EXPORT QCefKitsInit(int argc, char** argv, const QCefKitsSettings& settings)
 {
+    CefEnableHighDPISupport();
 #ifdef Q_OS_WIN
     (void)argc;
     (void)argv;
@@ -165,6 +175,7 @@ bool QCEFKITS_EXPORT QCefKitsInit(int argc, char** argv, const QCefKitsSettings&
 
 void QCefKitsShutdown()
 {
+    //qDebug() << "QCefKitsShutdown 0";
     if (g_timer != nullptr)
     {
         if (g_cefSettings.external_message_pump)
@@ -174,5 +185,17 @@ void QCefKitsShutdown()
         g_timer->stop();
         g_timer->deleteLater();
     }
+    //CefQuitMessageLoop();
+    //qApp->processEvents();
+    //CefWindowManager::CloseAllWindows();
+    //qDebug() << "QCefKitsShutdown 1";
+#ifndef OS_LINUX
     CefShutdown();
+#elif CHROME_VERSION_MAJOR < 90
+    CefShutdown();
+#else
+    //CefShutdown();    //Shutdown cef90 may hangs in ubuntu
+    //cef_shutdown();
+#endif
+    //qDebug() << "QCefKitsShutdown 2";
 }

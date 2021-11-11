@@ -6,6 +6,7 @@
 #define CEF_TESTS_CEFCLIENT_BROWSER_UTIL_GTK_H_
 #pragma once
 
+#include "include/cef_version.h"
 #include "include/base/cef_macros.h"
 #include "include/base/cef_platform_thread.h"
 

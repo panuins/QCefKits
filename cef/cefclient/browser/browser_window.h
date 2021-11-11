@@ -6,7 +6,13 @@
 #define CEF_TESTS_CEFCLIENT_BROWSER_BROWSER_WINDOW_H_
 #pragma once
 
+#include "include/cef_version.h"
+//#include "browser/browser_window.h"
+
+#include <memory>
+#if CHROME_VERSION_MAJOR < 95
 #include "include/base/cef_scoped_ptr.h"
+#endif
 #include "include/cef_browser.h"
 #include "browser/client_handler.h"
 #include "browser/client_types.h"
@@ -111,25 +117,29 @@ class BrowserWindow : public ClientHandler::Delegate {
 
  protected:
   // Allow deletion via scoped_ptr only.
+#if CHROME_VERSION_MAJOR > 94
+  friend std::default_delete<BrowserWindow>;
+#else
   friend struct base::DefaultDeleter<BrowserWindow>;
+#endif
 
   // Constructor may be called on any thread.
   // |delegate| must outlive this object.
   explicit BrowserWindow(Delegate* delegate);
 
   // ClientHandler::Delegate methods.
-  void OnBrowserCreated(CefRefPtr<CefBrowser> browser) OVERRIDE;
-  void OnBrowserClosing(CefRefPtr<CefBrowser> browser) OVERRIDE;
-  void OnBrowserClosed(CefRefPtr<CefBrowser> browser) OVERRIDE;
-  void OnSetAddress(const std::string& url) OVERRIDE;
-  void OnSetTitle(const std::string& title) OVERRIDE;
-  void OnSetFullscreen(bool fullscreen) OVERRIDE;
-  void OnAutoResize(const CefSize& new_size) OVERRIDE;
+  void OnBrowserCreated(CefRefPtr<CefBrowser> browser) override;
+  void OnBrowserClosing(CefRefPtr<CefBrowser> browser) override;
+  void OnBrowserClosed(CefRefPtr<CefBrowser> browser) override;
+  void OnSetAddress(const std::string& url) override;
+  void OnSetTitle(const std::string& title) override;
+  void OnSetFullscreen(bool fullscreen) override;
+  void OnAutoResize(const CefSize& new_size) override;
   void OnSetLoadingState(bool isLoading,
                          bool canGoBack,
-                         bool canGoForward) OVERRIDE;
+                         bool canGoForward) override;
   void OnSetDraggableRegions(
-      const std::vector<CefDraggableRegion>& regions) OVERRIDE;
+      const std::vector<CefDraggableRegion>& regions) override;
 
   Delegate* delegate_;
   CefRefPtr<CefBrowser> browser_;

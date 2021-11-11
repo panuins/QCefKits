@@ -2,7 +2,7 @@
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 
-#include "tests/cefclient/browser/util_gtk.h"
+#include "browser/util_gtk.h"
 
 #include <gdk/gdk.h>
 

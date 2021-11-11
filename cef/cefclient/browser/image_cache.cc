@@ -4,6 +4,7 @@
 
 #include "browser/image_cache.h"
 
+#include <algorithm>
 #include "shared/browser/file_util.h"
 #include "shared/browser/resource_util.h"
 
@@ -88,14 +89,24 @@ struct ImageCache::ImageContent {
   CefRefPtr<CefImage> image_;
 };
 
+#if CHROME_VERSION_MAJOR > 94
+void ImageCache::LoadImages(const ImageInfoSet& image_info,
+                            LoadImagesCallback callback) {
+#else
 void ImageCache::LoadImages(const ImageInfoSet& image_info,
                             const LoadImagesCallback& callback) {
+#endif
   DCHECK(!image_info.empty());
   DCHECK(!callback.is_null());
 
   if (!CefCurrentlyOn(TID_UI)) {
+#if CHROME_VERSION_MAJOR > 94
+    CefPostTask(TID_UI, base::BindOnce(&ImageCache::LoadImages, this, image_info,
+                                       std::move(callback)));
+#else
     CefPostTask(TID_UI, base::Bind(&ImageCache::LoadImages, this, image_info,
                                    callback));
+#endif
     return;
   }
 
@@ -132,10 +143,19 @@ void ImageCache::LoadImages(const ImageInfoSet& image_info,
 
   if (missing_images) {
     CefPostTask(TID_FILE_USER_BLOCKING,
+#if CHROME_VERSION_MAJOR > 94
+                base::BindOnce(&ImageCache::LoadMissing, this, image_info, images,
+                               std::move(callback)));
+#else
                 base::Bind(&ImageCache::LoadMissing, this, image_info, images,
                            callback));
+#endif
   } else {
-    callback.Run(images);
+#if CHROME_VERSION_MAJOR > 94
+      std::move(callback).Run(images);
+#else
+      callback.Run(images);
+#endif
   }
 }
 
@@ -165,10 +185,17 @@ ImageCache::ImageType ImageCache::GetImageType(const std::string& path) {
   return TYPE_NONE;
 }
 
+#if CHROME_VERSION_MAJOR > 94
+void ImageCache::LoadMissing(const ImageInfoSet& image_info,
+                             const ImageSet& images,
+                             LoadImagesCallback callback) {
+    CEF_REQUIRE_FILE_USER_BLOCKING_THREAD();
+#else
 void ImageCache::LoadMissing(const ImageInfoSet& image_info,
                              const ImageSet& images,
                              const LoadImagesCallback& callback) {
-  DCHECK(!CefCurrentlyOn(TID_UI) && !CefCurrentlyOn(TID_IO));
+    DCHECK(!CefCurrentlyOn(TID_UI) && !CefCurrentlyOn(TID_IO));
+#endif
 
   DCHECK_EQ(image_info.size(), images.size());
 
@@ -188,14 +215,23 @@ void ImageCache::LoadMissing(const ImageInfoSet& image_info,
     contents.push_back(content);
   }
 
+#if CHROME_VERSION_MAJOR > 94
+  CefPostTask(TID_UI, base::BindOnce(&ImageCache::UpdateCache, this, image_info,
+                                     contents, std::move(callback)));
+#else
   CefPostTask(TID_UI, base::Bind(&ImageCache::UpdateCache, this, image_info,
                                  contents, callback));
+#endif
 }
 
 // static
 bool ImageCache::LoadImageContents(const ImageInfo& info,
                                    ImageContent* content) {
+#if CHROME_VERSION_MAJOR > 94
+  CEF_REQUIRE_FILE_USER_BLOCKING_THREAD();
+#else
   DCHECK(!CefCurrentlyOn(TID_UI) && !CefCurrentlyOn(TID_IO));
+#endif
 
   ImageRepSet::const_iterator it = info.reps_.begin();
   for (; it != info.reps_.end(); ++it) {
@@ -220,7 +256,11 @@ bool ImageCache::LoadImageContents(const std::string& path,
                                    bool internal,
                                    ImageType* type,
                                    std::string* contents) {
+#if CHROME_VERSION_MAJOR > 94
+  CEF_REQUIRE_FILE_USER_BLOCKING_THREAD();
+#else
   DCHECK(!CefCurrentlyOn(TID_UI) && !CefCurrentlyOn(TID_IO));
+#endif
 
   *type = GetImageType(path);
   if (*type == TYPE_NONE)
@@ -238,7 +278,11 @@ bool ImageCache::LoadImageContents(const std::string& path,
 
 void ImageCache::UpdateCache(const ImageInfoSet& image_info,
                              const ImageContentSet& contents,
+#if CHROME_VERSION_MAJOR > 94
+                             LoadImagesCallback callback) {
+#else
                              const LoadImagesCallback& callback) {
+#endif
   CEF_REQUIRE_UI_THREAD();
 
   DCHECK_EQ(image_info.size(), contents.size());
@@ -262,7 +306,11 @@ void ImageCache::UpdateCache(const ImageInfoSet& image_info,
     }
   }
 
-  callback.Run(images);
+#if CHROME_VERSION_MAJOR > 94
+      std::move(callback).Run(images);
+#else
+      callback.Run(images);
+#endif
 }
 
 // static

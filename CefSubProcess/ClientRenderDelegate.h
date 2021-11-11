@@ -19,28 +19,28 @@ class ClientRenderDelegate : public ClientAppRenderer::Delegate {
  public:
   ClientRenderDelegate() : last_node_is_editable_(false) {}
 
-  void OnWebKitInitialized(CefRefPtr<ClientAppRenderer> app) OVERRIDE;
+  void OnWebKitInitialized(CefRefPtr<ClientAppRenderer> app) override;
 
   void OnContextCreated(CefRefPtr<ClientAppRenderer> app,
                         CefRefPtr<CefBrowser> browser,
                         CefRefPtr<CefFrame> frame,
-                        CefRefPtr<CefV8Context> context) OVERRIDE;
+                        CefRefPtr<CefV8Context> context) override;
 
   void OnContextReleased(CefRefPtr<ClientAppRenderer> app,
                          CefRefPtr<CefBrowser> browser,
                          CefRefPtr<CefFrame> frame,
-                         CefRefPtr<CefV8Context> context) OVERRIDE;
+                         CefRefPtr<CefV8Context> context) override;
 
   void OnFocusedNodeChanged(CefRefPtr<ClientAppRenderer> app,
                             CefRefPtr<CefBrowser> browser,
                             CefRefPtr<CefFrame> frame,
-                            CefRefPtr<CefDOMNode> node) OVERRIDE;
+                            CefRefPtr<CefDOMNode> node) override;
 
   bool OnProcessMessageReceived(CefRefPtr<ClientAppRenderer> app,
                                 CefRefPtr<CefBrowser> browser,
                                 CefRefPtr<CefFrame> frame,
                                 CefProcessId source_process,
-                                CefRefPtr<CefProcessMessage> message) OVERRIDE;
+                                CefRefPtr<CefProcessMessage> message) override;
 
   // Create the renderer delegate. Called from client_app_delegates_renderer.cc.
   static void CreateDelegates(std::set<CefRefPtr<ClientAppRenderer::Delegate> >& delegates);

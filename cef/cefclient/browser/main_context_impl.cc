@@ -4,8 +4,11 @@
 
 #include "browser/main_context_impl.h"
 
+#include <algorithm>
 #include "include/cef_parser.h"
+#if CHROME_VERSION_MAJOR < 95
 #include "include/cef_web_plugin.h"
+#endif
 #include "shared/browser/client_app_browser.h"
 #include "shared/common/client_switches.h"
 
@@ -143,6 +146,7 @@ MainContextImpl::MainContextImpl(CefRefPtr<CefCommandLine> command_line,
     browser_background_color_ = background_color_;
   }
 
+#if CHROME_VERSION_MAJOR < 95
   const std::string& cdm_path =
       command_line_->GetSwitchValue(switches::kWidevineCdmPath);
   if (!cdm_path.empty()) {
@@ -152,6 +156,7 @@ MainContextImpl::MainContextImpl(CefRefPtr<CefCommandLine> command_line,
     // Linux.
     CefRegisterWidevineCdm(cdm_path, nullptr);
   }
+#endif
 }
 
 MainContextImpl::~MainContextImpl() {

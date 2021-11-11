@@ -4,6 +4,9 @@
 
 #include "browser/views_menu_bar.h"
 
+#if CHROME_VERSION_MAJOR > 94
+#include "include/cef_i18n_util.h"
+#endif
 #include "include/views/cef_box_layout.h"
 #include "include/views/cef_window.h"
 #include "browser/views_style.h"
@@ -19,7 +22,11 @@ const int kMenuBarGroupId = 100;
 // If the mnemonic is capital I and the UI language is Turkish, lowercasing it
 // results in 'small dotless i', which is different from a 'dotted i'. Similar
 // issues may exist for az and lt locales.
+#if CEF_VERSION_MAJOR >= 91
+char16 ToLower(char16 c) {
+#else
 base::char16 ToLower(base::char16 c) {
+#endif
   CefStringUTF16 str16;
   cef_string_utf16_to_lower(&c, 1, str16.GetWritableStruct());
   return str16.length() > 0 ? str16.c_str()[0] : 0;
@@ -27,16 +34,28 @@ base::char16 ToLower(base::char16 c) {
 
 // Extract the mnemonic character from |title|. For example, if |title| is
 // "&Test" then the mnemonic character is 'T'.
+#if CEF_VERSION_MAJOR >= 91
+char16 GetMnemonic(const std::u16string& title) {
+#else
 base::char16 GetMnemonic(const base::string16& title) {
+#endif
   size_t index = 0;
   do {
     index = title.find('&', index);
+#if CEF_VERSION_MAJOR >= 91
+    if (index != std::u16string::npos) {
+#else
     if (index != base::string16::npos) {
+#endif
       if (index + 1 != title.size() && title[index + 1] != '&')
         return ToLower(title[index + 1]);
       index++;
     }
+#if CEF_VERSION_MAJOR >= 91
+  } while (index != std::u16string::npos);
+#else
   } while (index != base::string16::npos);
+#endif
   return 0;
 }
 
@@ -89,7 +108,11 @@ CefRefPtr<CefMenuModel> ViewsMenuBar::CreateMenuModel(const CefString& label,
   panel_->AddChildView(button);
 
   // Extract the mnemonic that triggers the menu, if any.
+#if CEF_VERSION_MAJOR >= 91
+  char16 mnemonic = GetMnemonic(label);
+#else
   base::char16 mnemonic = GetMnemonic(label);
+#endif
   if (mnemonic != 0)
     mnemonics_.insert(std::make_pair(mnemonic, new_menu_id));
 
@@ -153,9 +176,18 @@ void ViewsMenuBar::OnMenuButtonPressed(
     CefRefPtr<CefMenuButtonPressedLock> button_pressed_lock) {
   CefRefPtr<CefMenuModel> menu_model = GetMenuModel(menu_button->GetID());
 
-  // Adjust menu position left by button width.
   CefPoint point = screen_point;
+#if CHROME_VERSION_MAJOR > 94
+  // Adjust menu position to align with the button.
+  if (CefIsRTL()) {
+      point.x += menu_button->GetBounds().width - 4;
+  } else {
+      point.x -= menu_button->GetBounds().width - 4;
+  }
+#else
+  // Adjust menu position left by button width.
   point.x -= menu_button->GetBounds().width - 4;
+#endif
 
   // Keep track of the current |last_nav_with_keyboard_| status and restore it
   // after displaying the new menu.
@@ -211,6 +243,13 @@ void ViewsMenuBar::MouseOutsideMenu(CefRefPtr<CefMenuModel> menu_model,
 
     CefRefPtr<CefView> button = panel_->GetViewForID(id);
     CefRect button_bounds = button->GetBounds();
+#if CHROME_VERSION_MAJOR > 94
+  if (CefIsRTL()) {
+      // Adjust for right-to-left button layout.
+      button_bounds.x =
+              panel_bounds.width - button_bounds.x - button_bounds.width;
+  }
+#endif
     if (button_bounds.Contains(window_point)) {
       // Trigger the hovered MenuButton.
       TriggerMenuButton(button);

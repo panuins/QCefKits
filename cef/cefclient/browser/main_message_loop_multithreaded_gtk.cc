@@ -2,12 +2,16 @@
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 
-#include "tests/cefclient/browser/main_message_loop_multithreaded_gtk.h"
+#include "browser/main_message_loop_multithreaded_gtk.h"
 
 #include <X11/Xlib.h>
 #include <gtk/gtk.h>
 
+#if CHROME_VERSION_MAJOR > 94
+#include "include/base/cef_callback.h"
+#else
 #include "include/base/cef_bind.h"
+#endif
 #include "include/base/cef_logging.h"
 #include "include/wrapper/cef_closure_task.h"
 
@@ -105,8 +109,13 @@ int MainMessageLoopMultithreadedGtk::Run() {
 }
 
 void MainMessageLoopMultithreadedGtk::Quit() {
+#if CHROME_VERSION_MAJOR > 94
+  PostTask(CefCreateClosureTask(base::BindOnce(
+      &MainMessageLoopMultithreadedGtk::DoQuit, base::Unretained(this))));
+#else
   PostTask(CefCreateClosureTask(base::Bind(
       &MainMessageLoopMultithreadedGtk::DoQuit, base::Unretained(this))));
+#endif
 }
 
 void MainMessageLoopMultithreadedGtk::PostTask(CefRefPtr<CefTask> task) {

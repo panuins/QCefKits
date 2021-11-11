@@ -2,13 +2,15 @@
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 
-#include "tests/shared/browser/main_message_loop_external_pump.h"
+#include "shared/browser/main_message_loop_external_pump.h"
 
 #include <errno.h>
 #include <fcntl.h>
 #include <math.h>
 
 #include <glib.h>
+
+#include <memory>
 
 #include "include/base/cef_logging.h"
 #include "include/cef_app.h"
@@ -57,11 +59,11 @@ class MainMessageLoopExternalPumpLinux : public MainMessageLoopExternalPump {
   ~MainMessageLoopExternalPumpLinux();
 
   // MainMessageLoopStd methods:
-  void Quit() OVERRIDE;
-  int Run() OVERRIDE;
+  void Quit() override;
+  int Run() override;
 
   // MainMessageLoopExternalPump methods:
-  void OnScheduleMessagePumpWork(int64 delay_ms) OVERRIDE;
+  void OnScheduleMessagePumpWork(int64 delay_ms) override;
 
   // Internal methods used for processing the pump callbacks. They are public
   // for simplicity but should not be used directly. HandlePrepare is called
@@ -75,9 +77,9 @@ class MainMessageLoopExternalPumpLinux : public MainMessageLoopExternalPump {
 
  protected:
   // MainMessageLoopExternalPump methods:
-  void SetTimer(int64 delay_ms) OVERRIDE;
-  void KillTimer() OVERRIDE;
-  bool IsTimerPending() OVERRIDE;
+  void SetTimer(int64 delay_ms) override;
+  void KillTimer() override;
+  bool IsTimerPending() override;
 
  private:
   // Used to flag that the Run() invocation should return ASAP.
@@ -101,7 +103,11 @@ class MainMessageLoopExternalPumpLinux : public MainMessageLoopExternalPump {
   int wakeup_pipe_write_;
 
   // Use a scoped_ptr to avoid needing the definition of GPollFD in the header.
+#if CHROME_VERSION_MAJOR > 94
+  std::unique_ptr<GPollFD> wakeup_gpollfd_;
+#else
   scoped_ptr<GPollFD> wakeup_gpollfd_;
+#endif
 };
 
 // Return a timeout suitable for the glib loop, -1 to block forever,
@@ -150,7 +156,7 @@ gboolean WorkSourceDispatch(GSource* source,
 
 // I wish these could be const, but g_source_new wants non-const.
 GSourceFuncs WorkSourceFuncs = {WorkSourcePrepare, WorkSourceCheck,
-                                WorkSourceDispatch, NULL};
+                                WorkSourceDispatch, nullptr};
 
 MainMessageLoopExternalPumpLinux::MainMessageLoopExternalPumpLinux()
     : should_quit_(false),
@@ -292,9 +298,15 @@ bool MainMessageLoopExternalPumpLinux::IsTimerPending() {
 }  // namespace
 
 // static
+#if CHROME_VERSION_MAJOR > 94
+std::unique_ptr<MainMessageLoopExternalPump>
+MainMessageLoopExternalPump::Create() {
+  return std::make_unique<MainMessageLoopExternalPumpLinux>();
+#else
 scoped_ptr<MainMessageLoopExternalPump> MainMessageLoopExternalPump::Create() {
   return scoped_ptr<MainMessageLoopExternalPump>(
       new MainMessageLoopExternalPumpLinux());
+#endif
 }
 
 }  // namespace client

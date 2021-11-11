@@ -124,7 +124,7 @@ bool JSDialogHandler::OnJSDialog(CefRefPtr<CefBrowser> /*browser*/,
     }
     if (m_messagebox)
     {
-        qDebug() << m_ret;
+        qDebug() << "JSDialogHandler::OnJSDialog" << m_ret;
         callback->Continue((static_cast<QMessageBox::StandardButton>(m_ret) == QMessageBox::Yes)
                            || (static_cast<QMessageBox::StandardButton>(m_ret) == QMessageBox::Ok),
                            CefString());

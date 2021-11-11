@@ -2,7 +2,7 @@
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 
-#include "tests/cefclient/browser/dialog_handler_gtk.h"
+#include "browser/dialog_handler_gtk.h"
 
 #include <libgen.h>
 #include <sys/stat.h>
@@ -10,8 +10,8 @@
 #include "include/cef_browser.h"
 #include "include/cef_parser.h"
 #include "include/wrapper/cef_helpers.h"
-#include "tests/cefclient/browser/root_window.h"
-#include "tests/cefclient/browser/util_gtk.h"
+#include "browser/root_window.h"
+#include "browser/util_gtk.h"
 
 namespace client {
 
@@ -168,7 +168,11 @@ bool ClientDialogHandlerGtk::OnFileDialog(
 
   GetWindowAndContinue(
       browser,
+#if CHROME_VERSION_MAJOR > 94
+      base::BindOnce(&ClientDialogHandlerGtk::OnFileDialogContinue, this, params));
+#else
       base::Bind(&ClientDialogHandlerGtk::OnFileDialogContinue, this, params));
+#endif
   return true;
 }
 
@@ -191,7 +195,11 @@ bool ClientDialogHandlerGtk::OnJSDialog(CefRefPtr<CefBrowser> browser,
 
   GetWindowAndContinue(
       browser,
+#if CHROME_VERSION_MAJOR > 94
+      base::BindOnce(&ClientDialogHandlerGtk::OnJSDialogContinue, this, params));
+#else
       base::Bind(&ClientDialogHandlerGtk::OnJSDialogContinue, this, params));
+#endif
   return true;
 }
 
@@ -275,7 +283,7 @@ void ClientDialogHandlerGtk::OnFileDialogContinue(OnFileDialogParams params,
 
   GtkWidget* dialog = gtk_file_chooser_dialog_new(
       title_str.c_str(), GTK_WINDOW(window), action, "_Cancel",
-      GTK_RESPONSE_CANCEL, accept_button, GTK_RESPONSE_ACCEPT, NULL);
+      GTK_RESPONSE_CANCEL, accept_button, GTK_RESPONSE_ACCEPT, nullptr);
 
   if (mode_type == FILE_DIALOG_OPEN_MULTIPLE)
     gtk_file_chooser_set_select_multiple(GTK_FILE_CHOOSER(dialog), TRUE);
@@ -402,7 +410,7 @@ void ClientDialogHandlerGtk::OnJSDialogContinue(OnJSDialogParams params,
                                        gtk_message_type, buttons, "%s",
                                        params.message_text.ToString().c_str());
   g_signal_connect(gtk_dialog_, "delete-event",
-                   G_CALLBACK(gtk_widget_hide_on_delete), NULL);
+                   G_CALLBACK(gtk_widget_hide_on_delete), nullptr);
 
   gtk_window_set_title(GTK_WINDOW(gtk_dialog_), title.c_str());
 
@@ -430,16 +438,29 @@ void ClientDialogHandlerGtk::OnJSDialogContinue(OnJSDialogParams params,
 
 void ClientDialogHandlerGtk::GetWindowAndContinue(
     CefRefPtr<CefBrowser> browser,
+#if CHROME_VERSION_MAJOR > 94
+    base::OnceCallback<void(GtkWindow*)> callback) {
+#else
     base::Callback<void(GtkWindow*)> callback) {
+#endif
   if (!CURRENTLY_ON_MAIN_THREAD()) {
+#if CHROME_VERSION_MAJOR > 94
+    MAIN_POST_CLOSURE(base::BindOnce(&ClientDialogHandlerGtk::GetWindowAndContinue,
+                                     this, browser, std::move(callback)));
+#else
     MAIN_POST_CLOSURE(base::Bind(&ClientDialogHandlerGtk::GetWindowAndContinue,
                                  this, browser, callback));
+#endif
     return;
   }
 
   GtkWindow* window = GetWindow(browser);
   if (window) {
-    callback.Run(window);
+#if CHROME_VERSION_MAJOR > 94
+      std::move(callback).Run(window);
+#else
+      callback.Run(window);
+#endif
   }
 }
 
@@ -462,8 +483,13 @@ void ClientDialogHandlerGtk::OnDialogResponse(GtkDialog* dialog,
       NOTREACHED();
   }
 
+#if CHROME_VERSION_MAJOR > 94
+  CefPostTask(TID_UI, base::BindOnce(&ClientDialogHandlerGtk::OnResetDialogState,
+                                     handler, nullptr));
+#else
   CefPostTask(TID_UI, base::Bind(&ClientDialogHandlerGtk::OnResetDialogState,
                                  handler, nullptr));
+#endif
 }
 
 }  // namespace client

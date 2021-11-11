@@ -9,7 +9,11 @@
 #include <string>
 #include <vector>
 
+#if CHROME_VERSION_MAJOR > 94
+#include "include/base/cef_callback.h"
+#else
 #include "include/base/cef_bind.h"
+#endif
 #include "include/wrapper/cef_stream_resource_handler.h"
 #include "browser/main_context.h"
 #include "browser/test_runner.h"
@@ -39,18 +43,38 @@ const char kMessageMaximizeName[] = "WindowTest.Maximize";
 const char kMessageRestoreName[] = "WindowTest.Restore";
 
 // Create the appropriate platform test runner object.
+#if CHROME_VERSION_MAJOR > 94
+std::unique_ptr<WindowTestRunner> CreateWindowTestRunner() {
+#else
 scoped_ptr<WindowTestRunner> CreateWindowTestRunner() {
+#endif
 #if defined(OS_WIN) || defined(OS_LINUX)
   if (MainContext::Get()->UseViews())
+#if CHROME_VERSION_MAJOR > 94
+    return std::unique_ptr<WindowTestRunner>(new WindowTestRunnerViews());
+#else
     return scoped_ptr<WindowTestRunner>(new WindowTestRunnerViews());
+#endif
 #endif
 
 #if defined(OS_WIN)
+#if CHROME_VERSION_MAJOR > 94
+  return std::unique_ptr<WindowTestRunner>(new WindowTestRunnerWin());
+#else
   return scoped_ptr<WindowTestRunner>(new WindowTestRunnerWin());
+#endif
 #elif defined(OS_LINUX)
+#if CHROME_VERSION_MAJOR > 94
+  return std::unique_ptr<WindowTestRunner>(new WindowTestRunnerGtk());
+#else
   return scoped_ptr<WindowTestRunner>(new WindowTestRunnerGtk());
+#endif
 #elif defined(OS_MAC)
+#if CHROME_VERSION_MAJOR > 94
+  return std::unique_ptr<WindowTestRunner>(new WindowTestRunnerMac());
+#else
   return scoped_ptr<WindowTestRunner>(new WindowTestRunnerMac());
+#endif
 #else
 #error "No implementation available for your platform."
 #endif
@@ -67,7 +91,7 @@ class Handler : public CefMessageRouterBrowserSide::Handler {
                        int64 query_id,
                        const CefString& request,
                        bool persistent,
-                       CefRefPtr<Callback> callback) OVERRIDE {
+                       CefRefPtr<Callback> callback) override {
     // Only handle messages from the test URL.
     const std::string& url = frame->GetURL();
     if (!test_runner::IsTestURL(url, kTestUrlPath))
@@ -109,7 +133,11 @@ class Handler : public CefMessageRouterBrowserSide::Handler {
   }
 
  private:
+#if CHROME_VERSION_MAJOR > 94
+  std::unique_ptr<WindowTestRunner> runner_;
+#else
   scoped_ptr<WindowTestRunner> runner_;
+#endif
 };
 
 }  // namespace

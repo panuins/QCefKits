@@ -40,7 +40,7 @@ private:
     static void RegisterCustomSchemes(CefRawPtr<CefSchemeRegistrar> registrar);
 
     // CefApp methods.
-    void OnRegisterCustomSchemes(CefRawPtr<CefSchemeRegistrar> registrar) OVERRIDE;
+    void OnRegisterCustomSchemes(CefRawPtr<CefSchemeRegistrar> registrar) override;
 
     DISALLOW_COPY_AND_ASSIGN(ClientApp);
 };

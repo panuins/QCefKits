@@ -2,14 +2,14 @@
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 
-#include "tests/cefclient/browser/window_test_runner_gtk.h"
+#include "browser/window_test_runner_gtk.h"
 
 #include <gtk/gtk.h>
 
 #include "include/wrapper/cef_helpers.h"
-#include "tests/cefclient/browser/root_window.h"
-#include "tests/cefclient/browser/util_gtk.h"
-#include "tests/shared/browser/main_message_loop.h"
+#include "browser/root_window.h"
+#include "browser/util_gtk.h"
+#include "shared/browser/main_message_loop.h"
 
 namespace client {
 namespace window_test {
@@ -115,19 +115,35 @@ void WindowTestRunnerGtk::SetPos(CefRefPtr<CefBrowser> browser,
                                  int y,
                                  int width,
                                  int height) {
+#if CHROME_VERSION_MAJOR > 94
+  MAIN_POST_CLOSURE(base::BindOnce(SetPosImpl, browser, x, y, width, height));
+#else
   MAIN_POST_CLOSURE(base::Bind(SetPosImpl, browser, x, y, width, height));
+#endif
 }
 
 void WindowTestRunnerGtk::Minimize(CefRefPtr<CefBrowser> browser) {
+#if CHROME_VERSION_MAJOR > 94
+  MAIN_POST_CLOSURE(base::BindOnce(MinimizeImpl, browser));
+#else
   MAIN_POST_CLOSURE(base::Bind(MinimizeImpl, browser));
+#endif
 }
 
 void WindowTestRunnerGtk::Maximize(CefRefPtr<CefBrowser> browser) {
+#if CHROME_VERSION_MAJOR > 94
+  MAIN_POST_CLOSURE(base::BindOnce(MaximizeImpl, browser));
+#else
   MAIN_POST_CLOSURE(base::Bind(MaximizeImpl, browser));
+#endif
 }
 
 void WindowTestRunnerGtk::Restore(CefRefPtr<CefBrowser> browser) {
+#if CHROME_VERSION_MAJOR > 94
+  MAIN_POST_CLOSURE(base::BindOnce(RestoreImpl, browser));
+#else
   MAIN_POST_CLOSURE(base::Bind(RestoreImpl, browser));
+#endif
 }
 
 }  // namespace window_test

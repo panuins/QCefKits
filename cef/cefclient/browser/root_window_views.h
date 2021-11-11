@@ -8,7 +8,10 @@
 
 #include <string>
 
+#include "include/cef_version.h"
+#if CHROME_VERSION_MAJOR < 95
 #include "include/base/cef_scoped_ptr.h"
+#endif
 #include "browser/client_handler.h"
 #include "browser/root_window.h"
 #include "browser/views_window.h"
@@ -28,63 +31,71 @@ class RootWindowViews : public RootWindow,
 
   // RootWindow methods:
   void Init(RootWindow::Delegate* delegate,
+#if CHROME_VERSION_MAJOR > 94
+            std::unique_ptr<RootWindowConfig> config,
+#else
             const RootWindowConfig& config,
-            const CefBrowserSettings& settings) OVERRIDE;
+#endif
+            const CefBrowserSettings& settings) override;
   void InitAsPopup(RootWindow::Delegate* delegate,
                    bool with_controls,
                    bool with_osr,
                    const CefPopupFeatures& popupFeatures,
                    CefWindowInfo& windowInfo,
                    CefRefPtr<CefClient>& client,
-                   CefBrowserSettings& settings) OVERRIDE;
-  void Show(ShowMode mode) OVERRIDE;
-  void Hide() OVERRIDE;
-  void SetBounds(int x, int y, size_t width, size_t height) OVERRIDE;
-  void Close(bool force) OVERRIDE;
-  void SetDeviceScaleFactor(float device_scale_factor) OVERRIDE;
-  float GetDeviceScaleFactor() const OVERRIDE;
-  CefRefPtr<CefBrowser> GetBrowser() const OVERRIDE;
-  ClientWindowHandle GetWindowHandle() const OVERRIDE;
-  bool WithWindowlessRendering() const OVERRIDE { return false; }
-  bool WithExtension() const OVERRIDE;
-  void OnExtensionsChanged(const ExtensionSet& extensions) OVERRIDE;
+                   CefBrowserSettings& settings) override;
+  void Show(ShowMode mode) override;
+  void Hide() override;
+  void SetBounds(int x, int y, size_t width, size_t height) override;
+  void Close(bool force) override;
+  void SetDeviceScaleFactor(float device_scale_factor) override;
+  float GetDeviceScaleFactor() const override;
+  CefRefPtr<CefBrowser> GetBrowser() const override;
+  ClientWindowHandle GetWindowHandle() const override;
+  bool WithWindowlessRendering() const override { return false; }
+  bool WithExtension() const override;
+  void OnExtensionsChanged(const ExtensionSet& extensions) override;
 
   // ViewsWindow::Delegate methods:
-  bool WithControls() OVERRIDE;
-  bool WithExtension() OVERRIDE;
-  bool InitiallyHidden() OVERRIDE;
-  CefRefPtr<CefWindow> GetParentWindow() OVERRIDE;
-  CefRect GetWindowBounds() OVERRIDE;
-  scoped_refptr<ImageCache> GetImageCache() OVERRIDE;
-  void OnViewsWindowCreated(CefRefPtr<ViewsWindow> window) OVERRIDE;
-  void OnViewsWindowDestroyed(CefRefPtr<ViewsWindow> window) OVERRIDE;
-  void OnViewsWindowActivated(CefRefPtr<ViewsWindow> window) OVERRIDE;
+  bool WithControls() override;
+  bool WithExtension() override;
+  bool InitiallyHidden() override;
+  CefRefPtr<CefWindow> GetParentWindow() override;
+  CefRect GetWindowBounds() override;
+  scoped_refptr<ImageCache> GetImageCache() override;
+  void OnViewsWindowCreated(CefRefPtr<ViewsWindow> window) override;
+  void OnViewsWindowDestroyed(CefRefPtr<ViewsWindow> window) override;
+  void OnViewsWindowActivated(CefRefPtr<ViewsWindow> window) override;
   ViewsWindow::Delegate* GetDelegateForPopup(
-      CefRefPtr<CefClient> client) OVERRIDE;
+      CefRefPtr<CefClient> client) override;
   void CreateExtensionWindow(CefRefPtr<CefExtension> extension,
                              const CefRect& source_bounds,
                              CefRefPtr<CefWindow> parent_window,
-                             const base::Closure& close_callback) OVERRIDE;
-  void OnTest(int test_id) OVERRIDE;
-  void OnExit() OVERRIDE;
+#if CHROME_VERSION_MAJOR > 94
+                             base::OnceClosure close_callback) override;
+#else
+                             const base::Closure& close_callback) override;
+#endif
+  void OnTest(int test_id) override;
+  void OnExit() override;
 
  protected:
   // ClientHandler::Delegate methods:
-  void OnBrowserCreated(CefRefPtr<CefBrowser> browser) OVERRIDE;
-  void OnBrowserClosing(CefRefPtr<CefBrowser> browser) OVERRIDE;
-  void OnBrowserClosed(CefRefPtr<CefBrowser> browser) OVERRIDE;
-  void OnSetAddress(const std::string& url) OVERRIDE;
-  void OnSetTitle(const std::string& title) OVERRIDE;
-  void OnSetFavicon(CefRefPtr<CefImage> image) OVERRIDE;
-  void OnSetFullscreen(bool fullscreen) OVERRIDE;
-  void OnAutoResize(const CefSize& new_size) OVERRIDE;
+  void OnBrowserCreated(CefRefPtr<CefBrowser> browser) override;
+  void OnBrowserClosing(CefRefPtr<CefBrowser> browser) override;
+  void OnBrowserClosed(CefRefPtr<CefBrowser> browser) override;
+  void OnSetAddress(const std::string& url) override;
+  void OnSetTitle(const std::string& title) override;
+  void OnSetFavicon(CefRefPtr<CefImage> image) override;
+  void OnSetFullscreen(bool fullscreen) override;
+  void OnAutoResize(const CefSize& new_size) override;
   void OnSetLoadingState(bool isLoading,
                          bool canGoBack,
-                         bool canGoForward) OVERRIDE;
+                         bool canGoForward) override;
   void OnSetDraggableRegions(
-      const std::vector<CefDraggableRegion>& regions) OVERRIDE;
-  void OnTakeFocus(bool next) OVERRIDE;
-  void OnBeforeContextMenu(CefRefPtr<CefMenuModel> model) OVERRIDE;
+      const std::vector<CefDraggableRegion>& regions) override;
+  void OnTakeFocus(bool next) override;
+  void OnBeforeContextMenu(CefRefPtr<CefMenuModel> model) override;
 
  private:
   void CreateClientHandler(const std::string& url);
@@ -104,20 +115,28 @@ class RootWindowViews : public RootWindow,
   // After initialization all members are only accessed on the main thread
   // unless otherwise indicated.
   // Members set during initialization.
-  bool with_controls_;
-  bool always_on_top_;
-  bool with_extension_;
-  bool initially_hidden_;
+#if CHROME_VERSION_MAJOR > 94
+  std::unique_ptr<RootWindowConfig> config_;
+#else
+  bool with_controls_ = false;
+  bool always_on_top_ = false;
+  bool with_extension_ = false;
+  bool initially_hidden_ = false;
   CefRefPtr<CefWindow> parent_window_;
-  bool is_popup_;
+#endif
+  bool is_popup_ = false;
   CefRect initial_bounds_;
+#if CHROME_VERSION_MAJOR > 94
+  base::OnceClosure close_callback_;
+#else
   base::Closure close_callback_;
-  bool position_on_resize_;
+#endif
+  bool position_on_resize_ = false;
   CefRefPtr<ClientHandler> client_handler_;
 
-  bool initialized_;
-  bool window_destroyed_;
-  bool browser_destroyed_;
+  bool initialized_ = false;
+  bool window_destroyed_ = false;
+  bool browser_destroyed_ = false;
 
   CefRefPtr<CefBrowser> browser_;
 

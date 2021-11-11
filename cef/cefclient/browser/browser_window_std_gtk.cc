@@ -2,7 +2,8 @@
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 
-#include "tests/cefclient/browser/browser_window_std_gtk.h"
+#include "browser/browser_window_std_gtk.h"
+#include "include/cef_version.h"
 
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
@@ -13,9 +14,9 @@
 #undef RootWindow  // Definition conflicts with root_window.h
 
 #include "include/base/cef_logging.h"
-#include "tests/cefclient/browser/client_handler_std.h"
-#include "tests/cefclient/browser/util_gtk.h"
-#include "tests/shared/browser/main_message_loop.h"
+#include "browser/client_handler_std.h"
+#include "browser/util_gtk.h"
+#include "shared/browser/main_message_loop.h"
 
 namespace client {
 
@@ -43,7 +44,11 @@ void SetXWindowVisible(XDisplay* xdisplay, ::Window xwindow, bool visible) {
 
   if (!visible) {
     // Set the hidden property state value.
+#if CHROME_VERSION_MAJOR > 94
+    std::unique_ptr<Atom[]> data(new Atom[1]);
+#else
     scoped_ptr<Atom[]> data(new Atom[1]);
+#endif
     data[0] = atoms[2];
 
     XChangeProperty(xdisplay, xwindow,
@@ -59,7 +64,7 @@ void SetXWindowVisible(XDisplay* xdisplay, ::Window xwindow, bool visible) {
                     atoms[0],  // name
                     atoms[1],  // type
                     32,        // size in bits of items in 'value'
-                    PropModeReplace, NULL,
+                    PropModeReplace, nullptr,
                     0);  // num items
   }
 }
@@ -182,7 +187,7 @@ ClientWindowHandle BrowserWindowStdGtk::GetWindowHandle() const {
 
   // There is no GtkWidget* representation of this object.
   NOTREACHED();
-  return NULL;
+  return nullptr;
 }
 
 }  // namespace client

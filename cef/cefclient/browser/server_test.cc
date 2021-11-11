@@ -5,9 +5,14 @@
 #include "browser/server_test.h"
 
 #include <algorithm>
+#include <memory>
 #include <string>
 
+#if CHROME_VERSION_MAJOR > 94
+#include "include/base/cef_callback.h"
+#else
 #include "include/base/cef_bind.h"
+#endif
 #include "include/base/cef_weak_ptr.h"
 #include "include/cef_parser.h"
 #include "include/cef_server.h"
@@ -42,25 +47,45 @@ const char kDefaultPath[] = "websocket.html";
 // Handles the HTTP/WebSocket server.
 class ServerHandler : public CefServerHandler {
  public:
+#if CHROME_VERSION_MAJOR > 94
+  typedef base::OnceCallback<void(bool /* success */)> CompleteCallback;
+#else
   typedef base::Callback<void(bool /* success */)> CompleteCallback;
+#endif
 
   ServerHandler() {}
 
   // |complete_callback| will be executed on the UI thread after completion.
+#if CHROME_VERSION_MAJOR > 94
+  void StartServer(int port, CompleteCallback complete_callback) {
+#else
   void StartServer(int port, const CompleteCallback& complete_callback) {
+#endif
     CEF_REQUIRE_UI_THREAD();
     DCHECK(!server_);
     DCHECK(port >= 1025 && port <= 65535);
     port_ = port;
+#if CHROME_VERSION_MAJOR > 94
+    complete_callback_ = std::move(complete_callback);
+#else
     complete_callback_ = complete_callback;
+#endif
     CefServer::CreateServer(kServerAddress, port, kServerBacklog, this);
   }
 
   // |complete_callback| will be executed on the UI thread after completion.
+#if CHROME_VERSION_MAJOR > 94
+  void StopServer(CompleteCallback complete_callback) {
+#else
   void StopServer(const CompleteCallback& complete_callback) {
+#endif
     CEF_REQUIRE_UI_THREAD();
     DCHECK(server_);
+#if CHROME_VERSION_MAJOR > 94
+    complete_callback_ = std::move(complete_callback);
+#else
     complete_callback_ = complete_callback;
+#endif
     server_->Shutdown();
   }
 
@@ -159,14 +184,23 @@ class ServerHandler : public CefServerHandler {
  private:
   void RunCompleteCallback(bool success) {
     if (!CefCurrentlyOn(TID_UI)) {
+#if CHROME_VERSION_MAJOR > 94
+      CefPostTask(TID_UI, base::BindOnce(&ServerHandler::RunCompleteCallback, this,
+                                         success));
+#else
       CefPostTask(TID_UI, base::Bind(&ServerHandler::RunCompleteCallback, this,
                                      success));
+#endif
       return;
     }
 
     if (!complete_callback_.is_null()) {
+#if CHROME_VERSION_MAJOR > 94
+      std::move(complete_callback_).Run(success);
+#else
       complete_callback_.Run(success);
       complete_callback_.Reset();
+#endif
     }
   }
 
@@ -225,7 +259,7 @@ class Handler : public CefMessageRouterBrowserSide::Handler {
                        int64 query_id,
                        const CefString& request,
                        bool persistent,
-                       CefRefPtr<Callback> callback) OVERRIDE {
+                       CefRefPtr<Callback> callback) override {
     CEF_REQUIRE_UI_THREAD();
 
     // Only handle messages from the test URL.
@@ -292,9 +326,15 @@ class Handler : public CefMessageRouterBrowserSide::Handler {
     handler_ = new ServerHandler();
 
     // Start the server. OnComplete will be executed upon completion.
+#if CHROME_VERSION_MAJOR > 94
+    handler_->StartServer(port,
+                          base::BindOnce(&Handler::OnStartComplete,
+                                         weak_ptr_factory_.GetWeakPtr(), callback));
+#else
     handler_->StartServer(port,
                           base::Bind(&Handler::OnStartComplete,
                                      weak_ptr_factory_.GetWeakPtr(), callback));
+#endif
   }
 
   // Stop the server.
@@ -306,8 +346,13 @@ class Handler : public CefMessageRouterBrowserSide::Handler {
     }
 
     // Stop the server. OnComplete will be executed upon completion.
+#if CHROME_VERSION_MAJOR > 94
+    handler_->StopServer(base::BindOnce(&Handler::OnStopComplete,
+                                        weak_ptr_factory_.GetWeakPtr(), callback));
+#else
     handler_->StopServer(base::Bind(&Handler::OnStopComplete,
                                     weak_ptr_factory_.GetWeakPtr(), callback));
+#endif
 
     handler_ = nullptr;
   }

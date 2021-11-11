@@ -6,8 +6,15 @@
 #define CEF_TESTS_SHARED_BROWSER_MAIN_MESSAGE_LOOP_H_
 #pragma once
 
+#include "include/cef_version.h"
+#include <memory>
+
+#if CHROME_VERSION_MAJOR > 94
+#include "include/base/cef_callback.h"
+#else
 #include "include/base/cef_bind.h"
 #include "include/base/cef_scoped_ptr.h"
+#endif
 #include "include/cef_task.h"
 
 #if defined(OS_WIN)
@@ -47,11 +54,21 @@ class MainMessageLoop {
 #endif
 
   // Post a closure for execution on the main message loop.
+#if CHROME_VERSION_MAJOR > 94
+  void PostClosure(base::OnceClosure closure);
+  void PostClosure(const base::RepeatingClosure& closure);
+#else
   void PostClosure(const base::Closure& closure);
+#endif
 
  protected:
+#if CHROME_VERSION_MAJOR > 94
+  // Only allow deletion via std::unique_ptr.
+  friend std::default_delete<MainMessageLoop>;
+#else
   // Only allow deletion via scoped_ptr.
   friend struct base::DefaultDeleter<MainMessageLoop>;
+#endif
 
   MainMessageLoop();
   virtual ~MainMessageLoop();
@@ -96,8 +113,14 @@ struct DeleteOnMainThread {
     if (CURRENTLY_ON_MAIN_THREAD()) {
       delete x;
     } else {
-      client::MainMessageLoop::Get()->PostClosure(
-          base::Bind(&DeleteOnMainThread::Destruct<T>, x));
+#if CHROME_VERSION_MAJOR > 94
+        client::MainMessageLoop::Get()->PostClosure(
+            base::BindOnce(&DeleteOnMainThread::Destruct<T>,
+                           base::Unretained(x)));
+#else
+        client::MainMessageLoop::Get()->PostClosure(
+            base::Bind(&DeleteOnMainThread::Destruct<T>, x));
+#endif
     }
   }
 };

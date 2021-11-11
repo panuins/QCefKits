@@ -4,6 +4,9 @@
 
 #include "browser/root_window.h"
 
+#if CHROME_VERSION_MAJOR > 94
+#include "include/base/cef_callback_helpers.h"
+#endif
 #include "browser/main_context.h"
 #include "browser/root_window_manager.h"
 
@@ -37,7 +40,11 @@ void RootWindow::OnExtensionsChanged(const ExtensionSet& extensions) {
 
   ExtensionSet::const_iterator it = extensions.begin();
   for (; it != extensions.end(); ++it) {
-    delegate_->CreateExtensionWindow(*it, CefRect(), nullptr, base::Closure(),
+#if CHROME_VERSION_MAJOR > 94
+      delegate_->CreateExtensionWindow(*it, CefRect(), nullptr, base::DoNothing(),
+#else
+      delegate_->CreateExtensionWindow(*it, CefRect(), nullptr, base::Closure(),
+#endif
                                      WithWindowlessRendering());
   }
 }

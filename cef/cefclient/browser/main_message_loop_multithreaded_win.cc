@@ -4,7 +4,11 @@
 
 #include "browser/main_message_loop_multithreaded_win.h"
 
+#if CHROME_VERSION_MAJOR > 94
+#include "include/base/cef_callback.h"
+#else
 #include "include/base/cef_bind.h"
+#endif
 #include "include/base/cef_logging.h"
 #include "include/cef_app.h"
 #include "browser/resource.h"

@@ -10,7 +10,11 @@
 #include <sstream>
 #include <string>
 
+#if CHROME_VERSION_MAJOR > 94
+#include "include/base/cef_callback.h"
+#else
 #include "include/base/cef_bind.h"
+#endif
 #include "include/cef_browser.h"
 #include "include/cef_frame.h"
 #include "include/cef_parser.h"
@@ -230,7 +234,7 @@ class ClientDownloadImageCallback : public CefDownloadImageCallback {
 
   void OnDownloadImageFinished(const CefString& image_url,
                                int http_status_code,
-                               CefRefPtr<CefImage> image) OVERRIDE {
+                               CefRefPtr<CefImage> image) override {
     if (image)
       client_handler_->NotifyFavicon(image);
   }
@@ -276,7 +280,11 @@ ClientHandler::ClientHandler(Delegate* delegate,
 void ClientHandler::DetachDelegate() {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
+#if CHROME_VERSION_MAJOR > 94
+    MAIN_POST_CLOSURE(base::BindOnce(&ClientHandler::DetachDelegate, this));
+#else
     MAIN_POST_CLOSURE(base::Bind(&ClientHandler::DetachDelegate, this));
+#endif
     return;
   }
 
@@ -717,11 +725,19 @@ bool ClientHandler::OnOpenURLFromTab(
       target_disposition == WOD_NEW_FOREGROUND_TAB) {
     // Handle middle-click and ctrl + left-click by opening the URL in a new
     // browser window.
+#if CHROME_VERSION_MAJOR > 94
+    auto config = std::make_unique<RootWindowConfig>();
+    config->with_controls = true;
+    config->with_osr = is_osr();
+    config->url = target_url;
+    MainContext::Get()->GetRootWindowManager()->CreateRootWindow(std::move(config));
+#else
     RootWindowConfig config;
     config.with_controls = true;
     config.with_osr = is_osr();
     config.url = target_url;
     MainContext::Get()->GetRootWindowManager()->CreateRootWindow(config);
+#endif
     return true;
   }
 
@@ -770,13 +786,24 @@ bool ClientHandler::GetAuthCredentials(CefRefPtr<CefBrowser> browser,
 bool ClientHandler::OnQuotaRequest(CefRefPtr<CefBrowser> browser,
                                    const CefString& origin_url,
                                    int64 new_size,
+#if CHROME_VERSION_MAJOR > 94
+                                   CefRefPtr<CefCallback> callback) {
+#else
                                    CefRefPtr<CefRequestCallback> callback) {
+#endif
   CEF_REQUIRE_IO_THREAD();
 
   static const int64 max_size = 1024 * 1024 * 20;  // 20mb.
 
   // Grant the quota request if the size is reasonable.
+#if CHROME_VERSION_MAJOR > 94
+  if (new_size <= max_size)
+      callback->Continue();
+  else
+      callback->Cancel();
+#else
   callback->Continue(new_size <= max_size);
+#endif
   return true;
 }
 
@@ -784,13 +811,21 @@ bool ClientHandler::OnCertificateError(CefRefPtr<CefBrowser> browser,
                                        ErrorCode cert_error,
                                        const CefString& request_url,
                                        CefRefPtr<CefSSLInfo> ssl_info,
+#if CHROME_VERSION_MAJOR > 94
+                                       CefRefPtr<CefCallback> callback) {
+#else
                                        CefRefPtr<CefRequestCallback> callback) {
+#endif
   CEF_REQUIRE_UI_THREAD();
 
   if (cert_error == ERR_CERT_AUTHORITY_INVALID &&
       request_url.ToString().find("https://www.magpcss.org/") == 0U) {
     // Allow the CEF Forum to load. It has a self-signed certificate.
+#if CHROME_VERSION_MAJOR > 94
+    callback->Continue();
+#else
     callback->Continue(true);
+#endif
     return true;
   }
 
@@ -886,7 +921,11 @@ cef_return_value_t ClientHandler::OnBeforeResourceLoad(
     CefRefPtr<CefBrowser> browser,
     CefRefPtr<CefFrame> frame,
     CefRefPtr<CefRequest> request,
+#if CHROME_VERSION_MAJOR > 94
+    CefRefPtr<CefCallback> callback) {
+#else
     CefRefPtr<CefRequestCallback> callback) {
+#endif
   CEF_REQUIRE_IO_THREAD();
 
   return resource_manager_->OnBeforeResourceLoad(browser, frame, request,
@@ -935,8 +974,13 @@ void ClientHandler::ShowDevTools(CefRefPtr<CefBrowser> browser,
                                  const CefPoint& inspect_element_at) {
   if (!CefCurrentlyOn(TID_UI)) {
     // Execute this method on the UI thread.
+#if CHROME_VERSION_MAJOR > 94
+    CefPostTask(TID_UI, base::BindOnce(&ClientHandler::ShowDevTools, this, browser,
+                                       inspect_element_at));
+#else
     CefPostTask(TID_UI, base::Bind(&ClientHandler::ShowDevTools, this, browser,
                                    inspect_element_at));
+#endif
     return;
   }
 
@@ -1015,18 +1059,31 @@ void ClientHandler::ShowSSLInformation(CefRefPtr<CefBrowser> browser) {
 
   ss << "</body></html>";
 
+#if CHROME_VERSION_MAJOR > 94
+  auto config = std::make_unique<RootWindowConfig>();
+  config->with_controls = false;
+  config->with_osr = is_osr();
+  config->url = test_runner::GetDataURI(ss.str(), "text/html");
+  MainContext::Get()->GetRootWindowManager()->CreateRootWindow(std::move(config));
+#else
   RootWindowConfig config;
   config.with_controls = false;
   config.with_osr = is_osr();
   config.url = test_runner::GetDataURI(ss.str(), "text/html");
   MainContext::Get()->GetRootWindowManager()->CreateRootWindow(config);
+#endif
 }
 
 void ClientHandler::SetStringResource(const std::string& page,
                                       const std::string& data) {
   if (!CefCurrentlyOn(TID_IO)) {
+#if CHROME_VERSION_MAJOR > 94
+    CefPostTask(TID_IO, base::BindOnce(&ClientHandler::SetStringResource, this,
+                                       page, data));
+#else
     CefPostTask(TID_IO, base::Bind(&ClientHandler::SetStringResource, this,
                                    page, data));
+#endif
     return;
   }
 
@@ -1052,8 +1109,12 @@ bool ClientHandler::CreatePopupWindow(CefRefPtr<CefBrowser> browser,
 void ClientHandler::NotifyBrowserCreated(CefRefPtr<CefBrowser> browser) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
-    MAIN_POST_CLOSURE(
-        base::Bind(&ClientHandler::NotifyBrowserCreated, this, browser));
+      MAIN_POST_CLOSURE(
+#if CHROME_VERSION_MAJOR > 94
+          base::BindOnce(&ClientHandler::NotifyBrowserCreated, this, browser));
+#else
+          base::Bind(&ClientHandler::NotifyBrowserCreated, this, browser));
+#endif
     return;
   }
 
@@ -1065,7 +1126,11 @@ void ClientHandler::NotifyBrowserClosing(CefRefPtr<CefBrowser> browser) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
     MAIN_POST_CLOSURE(
+#if CHROME_VERSION_MAJOR > 94
+        base::BindOnce(&ClientHandler::NotifyBrowserClosing, this, browser));
+#else
         base::Bind(&ClientHandler::NotifyBrowserClosing, this, browser));
+#endif
     return;
   }
 
@@ -1077,7 +1142,11 @@ void ClientHandler::NotifyBrowserClosed(CefRefPtr<CefBrowser> browser) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
     MAIN_POST_CLOSURE(
+#if CHROME_VERSION_MAJOR > 94
+        base::BindOnce(&ClientHandler::NotifyBrowserClosed, this, browser));
+#else
         base::Bind(&ClientHandler::NotifyBrowserClosed, this, browser));
+#endif
     return;
   }
 
@@ -1088,7 +1157,11 @@ void ClientHandler::NotifyBrowserClosed(CefRefPtr<CefBrowser> browser) {
 void ClientHandler::NotifyAddress(const CefString& url) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
+#if CHROME_VERSION_MAJOR > 94
+    MAIN_POST_CLOSURE(base::BindOnce(&ClientHandler::NotifyAddress, this, url));
+#else
     MAIN_POST_CLOSURE(base::Bind(&ClientHandler::NotifyAddress, this, url));
+#endif
     return;
   }
 
@@ -1099,7 +1172,11 @@ void ClientHandler::NotifyAddress(const CefString& url) {
 void ClientHandler::NotifyTitle(const CefString& title) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
+#if CHROME_VERSION_MAJOR > 94
+    MAIN_POST_CLOSURE(base::BindOnce(&ClientHandler::NotifyTitle, this, title));
+#else
     MAIN_POST_CLOSURE(base::Bind(&ClientHandler::NotifyTitle, this, title));
+#endif
     return;
   }
 
@@ -1110,7 +1187,11 @@ void ClientHandler::NotifyTitle(const CefString& title) {
 void ClientHandler::NotifyFavicon(CefRefPtr<CefImage> image) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
+#if CHROME_VERSION_MAJOR > 94
+    MAIN_POST_CLOSURE(base::BindOnce(&ClientHandler::NotifyFavicon, this, image));
+#else
     MAIN_POST_CLOSURE(base::Bind(&ClientHandler::NotifyFavicon, this, image));
+#endif
     return;
   }
 
@@ -1122,7 +1203,11 @@ void ClientHandler::NotifyFullscreen(bool fullscreen) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
     MAIN_POST_CLOSURE(
+#if CHROME_VERSION_MAJOR > 94
+        base::BindOnce(&ClientHandler::NotifyFullscreen, this, fullscreen));
+#else
         base::Bind(&ClientHandler::NotifyFullscreen, this, fullscreen));
+#endif
     return;
   }
 
@@ -1134,7 +1219,11 @@ void ClientHandler::NotifyAutoResize(const CefSize& new_size) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
     MAIN_POST_CLOSURE(
+#if CHROME_VERSION_MAJOR > 94
+        base::BindOnce(&ClientHandler::NotifyAutoResize, this, new_size));
+#else
         base::Bind(&ClientHandler::NotifyAutoResize, this, new_size));
+#endif
     return;
   }
 
@@ -1147,8 +1236,13 @@ void ClientHandler::NotifyLoadingState(bool isLoading,
                                        bool canGoForward) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
+#if CHROME_VERSION_MAJOR > 94
+    MAIN_POST_CLOSURE(base::BindOnce(&ClientHandler::NotifyLoadingState, this,
+                                     isLoading, canGoBack, canGoForward));
+#else
     MAIN_POST_CLOSURE(base::Bind(&ClientHandler::NotifyLoadingState, this,
                                  isLoading, canGoBack, canGoForward));
+#endif
     return;
   }
 
@@ -1161,7 +1255,11 @@ void ClientHandler::NotifyDraggableRegions(
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
     MAIN_POST_CLOSURE(
+#if CHROME_VERSION_MAJOR > 94
+        base::BindOnce(&ClientHandler::NotifyDraggableRegions, this, regions));
+#else
         base::Bind(&ClientHandler::NotifyDraggableRegions, this, regions));
+#endif
     return;
   }
 
@@ -1172,7 +1270,11 @@ void ClientHandler::NotifyDraggableRegions(
 void ClientHandler::NotifyTakeFocus(bool next) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
+#if CHROME_VERSION_MAJOR > 94
+    MAIN_POST_CLOSURE(base::BindOnce(&ClientHandler::NotifyTakeFocus, this, next));
+#else
     MAIN_POST_CLOSURE(base::Bind(&ClientHandler::NotifyTakeFocus, this, next));
+#endif
     return;
   }
 

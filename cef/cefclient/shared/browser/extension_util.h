@@ -8,6 +8,7 @@
 
 #include <string>
 
+#include "include/cef_version.h"
 #include "include/cef_extension.h"
 #include "include/cef_extension_handler.h"
 #include "include/wrapper/cef_resource_manager.h"

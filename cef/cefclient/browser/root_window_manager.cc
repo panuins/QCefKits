@@ -6,7 +6,12 @@
 
 #include <sstream>
 
+#include "include/cef_version.h"
+#if CHROME_VERSION_MAJOR > 94
+#include "include/base/cef_callback.h"
+#else
 #include "include/base/cef_bind.h"
+#endif
 #include "include/base/cef_logging.h"
 #include "include/wrapper/cef_helpers.h"
 #include "browser/main_context.h"
@@ -31,7 +36,7 @@ class ClientRequestContextHandler : public CefRequestContextHandler,
                           bool is_main_frame,
                           const CefString& top_origin_url,
                           CefRefPtr<CefWebPluginInfo> plugin_info,
-                          PluginPolicy* plugin_policy) OVERRIDE {
+                          PluginPolicy* plugin_policy) override {
     // Always allow the PDF plugin to load.
     if (*plugin_policy != PLUGIN_POLICY_ALLOW &&
         mime_type == "application/pdf") {
@@ -43,7 +48,7 @@ class ClientRequestContextHandler : public CefRequestContextHandler,
   }
 
   void OnRequestContextInitialized(
-      CefRefPtr<CefRequestContext> request_context) OVERRIDE {
+      CefRefPtr<CefRequestContext> request_context) override {
     CEF_REQUIRE_UI_THREAD();
 
     CefRefPtr<CefCommandLine> command_line =
@@ -75,14 +80,14 @@ class ClientRequestContextHandler : public CefRequestContextHandler,
   }
 
   // CefExtensionHandler methods:
-  void OnExtensionLoaded(CefRefPtr<CefExtension> extension) OVERRIDE {
+  void OnExtensionLoaded(CefRefPtr<CefExtension> extension) override {
     CEF_REQUIRE_UI_THREAD();
     MainContext::Get()->GetRootWindowManager()->AddExtension(extension);
   }
 
   CefRefPtr<CefBrowser> GetActiveBrowser(CefRefPtr<CefExtension> extension,
                                          CefRefPtr<CefBrowser> browser,
-                                         bool include_incognito) OVERRIDE {
+                                         bool include_incognito) override {
     CEF_REQUIRE_UI_THREAD();
 
     // Return the browser for the active/foreground window.
@@ -122,14 +127,23 @@ RootWindowManager::~RootWindowManager() {
   DCHECK(root_windows_.empty());
 }
 
+#if CHROME_VERSION_MAJOR > 94
+scoped_refptr<RootWindow> RootWindowManager::CreateRootWindow(
+    std::unique_ptr<RootWindowConfig> config) {
+#else
 scoped_refptr<RootWindow> RootWindowManager::CreateRootWindow(
     const RootWindowConfig& config) {
+#endif
   CefBrowserSettings settings;
   MainContext::Get()->PopulateBrowserSettings(&settings);
 
   scoped_refptr<RootWindow> root_window =
       RootWindow::Create(MainContext::Get()->UseViews());
+#if CHROME_VERSION_MAJOR > 94
+  root_window->Init(this, std::move(config), settings);
+#else
   root_window->Init(this, config, settings);
+#endif
 
   // Store a reference to the root window on the main thread.
   OnRootWindowCreated(root_window);
@@ -168,7 +182,11 @@ scoped_refptr<RootWindow> RootWindowManager::CreateRootWindowAsExtension(
     CefRefPtr<CefExtension> extension,
     const CefRect& source_bounds,
     CefRefPtr<CefWindow> parent_window,
+#if CHROME_VERSION_MAJOR > 94
+    base::OnceClosure close_callback,
+#else
     const base::Closure& close_callback,
+#endif
     bool with_controls,
     bool with_osr) {
   const std::string& extension_url = extension_util::GetExtensionURL(extension);
@@ -180,6 +198,18 @@ scoped_refptr<RootWindow> RootWindowManager::CreateRootWindowAsExtension(
   // Create an initially hidden browser window that loads the extension URL.
   // We'll show the window when the desired size becomes available via
   // ClientHandler::OnAutoResize.
+#if CHROME_VERSION_MAJOR > 94
+  auto config = std::unique_ptr<RootWindowConfig>();
+  config->with_controls = with_controls;
+  config->with_osr = with_osr;
+  config->with_extension = true;
+  config->initially_hidden = true;
+  config->source_bounds = source_bounds;
+  config->parent_window = parent_window;
+  config->close_callback = std::move(close_callback);
+  config->url = extension_url;
+  return CreateRootWindow(std::move(config));
+#else
   RootWindowConfig config;
   config.with_controls = with_controls;
   config.with_osr = with_osr;
@@ -190,6 +220,7 @@ scoped_refptr<RootWindow> RootWindowManager::CreateRootWindowAsExtension(
   config.close_callback = close_callback;
   config.url = extension_url;
   return CreateRootWindow(config);
+#endif
 }
 
 bool RootWindowManager::HasRootWindowAsExtension(
@@ -198,7 +229,11 @@ bool RootWindowManager::HasRootWindowAsExtension(
 
   RootWindowSet::const_iterator it = root_windows_.begin();
   for (; it != root_windows_.end(); ++it) {
+#if CHROME_VERSION_MAJOR > 94
+    scoped_refptr<RootWindow> root_window = (*it);
+#else
     const RootWindow* root_window = (*it);
+#endif
     if (!root_window->WithExtension())
       continue;
 
@@ -224,7 +259,7 @@ scoped_refptr<RootWindow> RootWindowManager::GetWindowForBrowser(
   for (; it != root_windows_.end(); ++it) {
     CefRefPtr<CefBrowser> browser = (*it)->GetBrowser();
     if (browser.get() && browser->GetIdentifier() == browser_id)
-      return *it;
+        return *it;
   }
   return nullptr;
 }
@@ -242,8 +277,13 @@ CefRefPtr<CefBrowser> RootWindowManager::GetActiveBrowser() const {
 void RootWindowManager::CloseAllWindows(bool force) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
+#if CHROME_VERSION_MAJOR > 94
+    MAIN_POST_CLOSURE(base::BindOnce(&RootWindowManager::CloseAllWindows,
+                                     base::Unretained(this), force));
+#else
     MAIN_POST_CLOSURE(base::Bind(&RootWindowManager::CloseAllWindows,
                                  base::Unretained(this), force));
+#endif
     return;
   }
 
@@ -262,8 +302,13 @@ void RootWindowManager::CloseAllWindows(bool force) {
 void RootWindowManager::AddExtension(CefRefPtr<CefExtension> extension) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
+#if CHROME_VERSION_MAJOR > 94
+    MAIN_POST_CLOSURE(base::BindOnce(&RootWindowManager::AddExtension,
+                                     base::Unretained(this), extension));
+#else
     MAIN_POST_CLOSURE(base::Bind(&RootWindowManager::AddExtension,
                                  base::Unretained(this), extension));
+#endif
     return;
   }
 
@@ -286,8 +331,13 @@ void RootWindowManager::OnRootWindowCreated(
     scoped_refptr<RootWindow> root_window) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
+#if CHROME_VERSION_MAJOR > 94
+    MAIN_POST_CLOSURE(base::BindOnce(&RootWindowManager::OnRootWindowCreated,
+                                     base::Unretained(this), root_window));
+#else
     MAIN_POST_CLOSURE(base::Bind(&RootWindowManager::OnRootWindowCreated,
                                  base::Unretained(this), root_window));
+#endif
     return;
   }
 
@@ -298,7 +348,11 @@ void RootWindowManager::OnRootWindowCreated(
     if (root_windows_.size() == 1U) {
       // The first non-extension root window should be considered the active
       // window.
+#if CHROME_VERSION_MAJOR > 94
+      OnRootWindowActivated(root_window.get());
+#else
       OnRootWindowActivated(root_window);
+#endif
     }
   }
 }
@@ -308,7 +362,11 @@ void RootWindowManager::NotifyExtensionsChanged() {
 
   RootWindowSet::const_iterator it = root_windows_.begin();
   for (; it != root_windows_.end(); ++it) {
+#if CHROME_VERSION_MAJOR > 94
+    scoped_refptr<RootWindow> root_window = (*it);
+#else
     RootWindow* root_window = *it;
+#endif
     if (!root_window->WithExtension())
       root_window->OnExtensionsChanged(extensions_);
   }
@@ -335,7 +393,7 @@ CefRefPtr<CefRequestContext> RootWindowManager::GetRequestContext(
         // isolated context objects.
         std::stringstream ss;
         ss << command_line->GetSwitchValue(switches::kCachePath).ToString()
-           << file_util::kPathSep << time(NULL);
+           << file_util::kPathSep << time(nullptr);
         CefString(&settings.cache_path) = ss.str();
       }
     }
@@ -390,8 +448,13 @@ void RootWindowManager::OnRootWindowDestroyed(RootWindow* root_window) {
 
   if (terminate_when_all_windows_closed_ && root_windows_.empty()) {
     // All windows have closed. Clean up on the UI thread.
+#if CHROME_VERSION_MAJOR > 94
+    CefPostTask(TID_UI, base::BindOnce(&RootWindowManager::CleanupOnUIThread,
+                                       base::Unretained(this)));
+#else
     CefPostTask(TID_UI, base::Bind(&RootWindowManager::CleanupOnUIThread,
                                    base::Unretained(this)));
+#endif
   }
 }
 
@@ -410,7 +473,7 @@ void RootWindowManager::OnRootWindowActivated(RootWindow* root_window) {
 
   {
     base::AutoLock lock_scope(active_browser_lock_);
-    // May be NULL at this point, in which case we'll make the association in
+    // May be nullptr at this point, in which case we'll make the association in
     // OnBrowserCreated.
     active_browser_ = active_root_window_->GetBrowser();
   }
@@ -430,13 +493,22 @@ void RootWindowManager::CreateExtensionWindow(
     CefRefPtr<CefExtension> extension,
     const CefRect& source_bounds,
     CefRefPtr<CefWindow> parent_window,
+#if CHROME_VERSION_MAJOR > 94
+    base::OnceClosure close_callback,
+#else
     const base::Closure& close_callback,
+#endif
     bool with_osr) {
   REQUIRE_MAIN_THREAD();
 
   if (!HasRootWindowAsExtension(extension)) {
-    CreateRootWindowAsExtension(extension, source_bounds, parent_window,
-                                close_callback, false, with_osr);
+#if CHROME_VERSION_MAJOR > 94
+      CreateRootWindowAsExtension(extension, source_bounds, parent_window,
+                                  std::move(close_callback), false, with_osr);
+#else
+      CreateRootWindowAsExtension(extension, source_bounds, parent_window,
+                                  close_callback, false, with_osr);
+#endif
   }
 }
 

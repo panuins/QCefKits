@@ -31,6 +31,7 @@ extern const char kFilterURL[];
 extern const char kUseViews[];
 extern const char kHideFrame[];
 extern const char kHideControls[];
+extern const char kHideOverlays[];
 extern const char kAlwaysOnTop[];
 extern const char kHideTopMenu[];
 extern const char kWidevineCdmPath[];
@@ -40,6 +41,7 @@ extern const char kLoadExtension[];
 extern const char kNoActivate[];
 extern const char kEnableChromeRuntime[];
 extern const char kShowChromeToolbar[];
+extern const char kInitialShowState[];
 
 }  // namespace switches
 }  // namespace client
