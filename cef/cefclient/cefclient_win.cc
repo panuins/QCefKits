@@ -4,7 +4,10 @@
 
 #include <windows.h>
 
+#include "include/cef_version.h"
+#if CHROME_VERSION_MAJOR < 95
 #include "include/base/cef_scoped_ptr.h"
+#endif
 #include "include/cef_command_line.h"
 #include "include/cef_sandbox_win.h"
 #include "browser/main_context_impl.h"
@@ -68,7 +71,11 @@ int RunMain(HINSTANCE hInstance, int nCmdShow) {
     return exit_code;
 
   // Create the main context object.
+#if CHROME_VERSION_MAJOR > 94
+  auto context = std::make_unique<MainContextImpl>(command_line, true);
+#else
   scoped_ptr<MainContextImpl> context(new MainContextImpl(command_line, true));
+#endif
 
   CefSettings settings;
 
@@ -84,7 +91,11 @@ int RunMain(HINSTANCE hInstance, int nCmdShow) {
   context->PopulateSettings(&settings);
 
   // Create the main message loop object.
+#if CHROME_VERSION_MAJOR > 94
+  std::unique_ptr<MainMessageLoop> message_loop;
+#else
   scoped_ptr<MainMessageLoop> message_loop;
+#endif
   if (settings.multi_threaded_message_loop)
     message_loop.reset(new MainMessageLoopMultithreadedWin);
   else if (settings.external_message_pump)
@@ -98,6 +109,16 @@ int RunMain(HINSTANCE hInstance, int nCmdShow) {
   // Register scheme handlers.
   test_runner::RegisterSchemeHandlers();
 
+#if CHROME_VERSION_MAJOR > 94
+  auto window_config = std::make_unique<RootWindowConfig>();
+  window_config->always_on_top = command_line->HasSwitch(switches::kAlwaysOnTop);
+  window_config->with_controls =
+      !command_line->HasSwitch(switches::kHideControls);
+  window_config->with_osr = settings.windowless_rendering_enabled ? true : false;
+
+  // Create the first window.
+  context->GetRootWindowManager()->CreateRootWindow(std::move(window_config));
+#else
   RootWindowConfig window_config;
   window_config.always_on_top = command_line->HasSwitch(switches::kAlwaysOnTop);
   window_config.with_controls =
@@ -106,6 +127,7 @@ int RunMain(HINSTANCE hInstance, int nCmdShow) {
 
   // Create the first window.
   context->GetRootWindowManager()->CreateRootWindow(window_config);
+#endif
 
   // Run the message loop. This will block until Quit() is called by the
   // RootWindowManager after all windows have been destroyed.

@@ -98,8 +98,13 @@ void CefWebPage::createBrowser(const QUrl &url)
 {
     CefWindowInfo window_info;
 #ifdef Q_OS_WIN
+#if CHROME_VERSION_MAJOR > 94
+    CefRect wnd_rect = {0, 0, m_widget->width(), m_widget->height()};
+    window_info.SetAsChild(HWND(m_widget->winId()), wnd_rect);
+#else
     RECT wnd_rect = {0, 0, m_widget->width(), m_widget->height()};
     window_info.SetAsChild(HWND(m_widget->winId()), wnd_rect);
+#endif
 
 //    if (GetWindowLongPtr(m_widget->winId(), GWL_EXSTYLE) & WS_EX_NOACTIVATE) {
 //      // Don't activate the browser window on creation.
@@ -395,8 +400,13 @@ QSharedPointer<QCefKits::ClientHandler::Delegate> CefWebPage::CreatePopupWindow(
     {
         ret->moveToThread(ret->m_widget->thread());
 #ifdef Q_OS_WIN
-        RECT wnd_rect = {0, 0, ret->m_widget->width(), ret->m_widget->height()};
-        windowInfo.SetAsChild(HWND(ret->m_widget->winId()), wnd_rect);
+#if CHROME_VERSION_MAJOR > 94
+    CefRect wnd_rect = {0, 0, m_widget->width(), m_widget->height()};
+    windowInfo.SetAsChild(HWND(m_widget->winId()), wnd_rect);
+#else
+    RECT wnd_rect = {0, 0, m_widget->width(), m_widget->height()};
+    windowInfo.SetAsChild(HWND(m_widget->winId()), wnd_rect);
+#endif
 #elif defined(Q_OS_LINUX)
 #ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
 //        ret->m_parentWindow = QWindow::fromWinId(ret->m_widget->winId());

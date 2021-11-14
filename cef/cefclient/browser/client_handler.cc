@@ -1109,14 +1109,17 @@ bool ClientHandler::CreatePopupWindow(CefRefPtr<CefBrowser> browser,
 void ClientHandler::NotifyBrowserCreated(CefRefPtr<CefBrowser> browser) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
-      MAIN_POST_CLOSURE(
 #if CHROME_VERSION_MAJOR > 94
-          base::BindOnce(&ClientHandler::NotifyBrowserCreated, this, browser));
-#else
-          base::Bind(&ClientHandler::NotifyBrowserCreated, this, browser));
-#endif
-    return;
+      MAIN_POST_CLOSURE(
+                  base::BindOnce(&ClientHandler::NotifyBrowserCreated, this, browser));
+      return;
   }
+#else
+      MAIN_POST_CLOSURE(
+                  base::Bind(&ClientHandler::NotifyBrowserCreated, this, browser));
+      return;
+  }
+#endif
 
   if (delegate_)
     delegate_->OnBrowserCreated(browser);
@@ -1125,14 +1128,17 @@ void ClientHandler::NotifyBrowserCreated(CefRefPtr<CefBrowser> browser) {
 void ClientHandler::NotifyBrowserClosing(CefRefPtr<CefBrowser> browser) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
-    MAIN_POST_CLOSURE(
 #if CHROME_VERSION_MAJOR > 94
-        base::BindOnce(&ClientHandler::NotifyBrowserClosing, this, browser));
-#else
-        base::Bind(&ClientHandler::NotifyBrowserClosing, this, browser));
-#endif
-    return;
+      MAIN_POST_CLOSURE(
+                  base::BindOnce(&ClientHandler::NotifyBrowserClosing, this, browser));
+      return;
   }
+#else
+      MAIN_POST_CLOSURE(
+                  base::Bind(&ClientHandler::NotifyBrowserClosing, this, browser));
+      return;
+  }
+#endif
 
   if (delegate_)
     delegate_->OnBrowserClosing(browser);
@@ -1141,14 +1147,17 @@ void ClientHandler::NotifyBrowserClosing(CefRefPtr<CefBrowser> browser) {
 void ClientHandler::NotifyBrowserClosed(CefRefPtr<CefBrowser> browser) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
-    MAIN_POST_CLOSURE(
 #if CHROME_VERSION_MAJOR > 94
-        base::BindOnce(&ClientHandler::NotifyBrowserClosed, this, browser));
-#else
-        base::Bind(&ClientHandler::NotifyBrowserClosed, this, browser));
-#endif
-    return;
+      MAIN_POST_CLOSURE(
+                  base::BindOnce(&ClientHandler::NotifyBrowserClosed, this, browser));
+      return;
   }
+#else
+      MAIN_POST_CLOSURE(
+                  base::Bind(&ClientHandler::NotifyBrowserClosed, this, browser));
+      return;
+  }
+#endif
 
   if (delegate_)
     delegate_->OnBrowserClosed(browser);
@@ -1202,14 +1211,17 @@ void ClientHandler::NotifyFavicon(CefRefPtr<CefImage> image) {
 void ClientHandler::NotifyFullscreen(bool fullscreen) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
-    MAIN_POST_CLOSURE(
 #if CHROME_VERSION_MAJOR > 94
-        base::BindOnce(&ClientHandler::NotifyFullscreen, this, fullscreen));
-#else
-        base::Bind(&ClientHandler::NotifyFullscreen, this, fullscreen));
-#endif
-    return;
+      MAIN_POST_CLOSURE(
+                  base::BindOnce(&ClientHandler::NotifyFullscreen, this, fullscreen));
+      return;
   }
+#else
+      MAIN_POST_CLOSURE(
+                  base::Bind(&ClientHandler::NotifyFullscreen, this, fullscreen));
+      return;
+  }
+#endif
 
   if (delegate_)
     delegate_->OnSetFullscreen(fullscreen);
@@ -1218,14 +1230,17 @@ void ClientHandler::NotifyFullscreen(bool fullscreen) {
 void ClientHandler::NotifyAutoResize(const CefSize& new_size) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
-    MAIN_POST_CLOSURE(
 #if CHROME_VERSION_MAJOR > 94
-        base::BindOnce(&ClientHandler::NotifyAutoResize, this, new_size));
-#else
-        base::Bind(&ClientHandler::NotifyAutoResize, this, new_size));
-#endif
-    return;
+      MAIN_POST_CLOSURE(
+                  base::BindOnce(&ClientHandler::NotifyAutoResize, this, new_size));
+      return;
   }
+#else
+      MAIN_POST_CLOSURE(
+                  base::Bind(&ClientHandler::NotifyAutoResize, this, new_size));
+      return;
+  }
+#endif
 
   if (delegate_)
     delegate_->OnAutoResize(new_size);
@@ -1254,14 +1269,17 @@ void ClientHandler::NotifyDraggableRegions(
     const std::vector<CefDraggableRegion>& regions) {
   if (!CURRENTLY_ON_MAIN_THREAD()) {
     // Execute this method on the main thread.
-    MAIN_POST_CLOSURE(
 #if CHROME_VERSION_MAJOR > 94
-        base::BindOnce(&ClientHandler::NotifyDraggableRegions, this, regions));
-#else
-        base::Bind(&ClientHandler::NotifyDraggableRegions, this, regions));
-#endif
-    return;
+      MAIN_POST_CLOSURE(
+                  base::BindOnce(&ClientHandler::NotifyDraggableRegions, this, regions));
+      return;
   }
+#else
+      MAIN_POST_CLOSURE(
+                  base::Bind(&ClientHandler::NotifyDraggableRegions, this, regions));
+      return;
+  }
+#endif
 
   if (delegate_)
     delegate_->OnSetDraggableRegions(regions);

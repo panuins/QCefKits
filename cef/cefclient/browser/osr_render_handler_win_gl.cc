@@ -27,7 +27,7 @@ class ScopedGLContext {
     DCHECK(result);
   }
   ~ScopedGLContext() {
-    BOOL result = wglMakeCurrent(NULL, NULL);
+    BOOL result = wglMakeCurrent(nullptr, nullptr);
     DCHECK(result);
     if (swap_buffers_) {
       result = SwapBuffers(hdc_);
@@ -47,8 +47,8 @@ OsrRenderHandlerWinGL::OsrRenderHandlerWinGL(
     HWND hwnd)
     : OsrRenderHandlerWin(settings, hwnd),
       renderer_(settings),
-      hdc_(NULL),
-      hrc_(NULL),
+      hdc_(nullptr),
+      hrc_(nullptr),
       painting_popup_(false) {}
 
 void OsrRenderHandlerWinGL::Initialize(CefRefPtr<CefBrowser> browser) {
@@ -198,8 +198,8 @@ void OsrRenderHandlerWinGL::DisableGL() {
     ReleaseDC(hwnd(), hdc_);
   }
 
-  hdc_ = NULL;
-  hrc_ = NULL;
+  hdc_ = nullptr;
+  hrc_ = nullptr;
 }
 
 }  // namespace client

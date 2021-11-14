@@ -151,12 +151,29 @@ RootWindowWin::~RootWindowWin() {
 }
 
 void RootWindowWin::Init(RootWindow::Delegate* delegate,
+#if CHROME_VERSION_MAJOR > 94
+                         std::unique_ptr<RootWindowConfig> config,
+#else
                          const RootWindowConfig& config,
+#endif
                          const CefBrowserSettings& settings) {
   DCHECK(delegate);
   DCHECK(!initialized_);
 
   delegate_ = delegate;
+#if CHROME_VERSION_MAJOR > 94
+  with_controls_ = config->with_controls;
+  always_on_top_ = config->always_on_top;
+  with_osr_ = config->with_osr;
+  with_extension_ = config->with_extension;
+
+  start_rect_.left = config->bounds.x;
+  start_rect_.top = config->bounds.y;
+  start_rect_.right = config->bounds.x + config->bounds.width;
+  start_rect_.bottom = config->bounds.y + config->bounds.height;
+
+  CreateBrowserWindow(config->url);
+#else
   with_controls_ = config.with_controls;
   always_on_top_ = config.always_on_top;
   with_osr_ = config.with_osr;
@@ -168,15 +185,25 @@ void RootWindowWin::Init(RootWindow::Delegate* delegate,
   start_rect_.bottom = config.bounds.y + config.bounds.height;
 
   CreateBrowserWindow(config.url);
+#endif
 
   initialized_ = true;
 
   // Create the native root window on the main thread.
   if (CURRENTLY_ON_MAIN_THREAD()) {
-    CreateRootWindow(settings, config.initially_hidden);
+#if CHROME_VERSION_MAJOR > 94
+      CreateRootWindow(settings, config->initially_hidden);
+#else
+      CreateRootWindow(settings, config.initially_hidden);
+#endif
   } else {
-    MAIN_POST_CLOSURE(base::Bind(&RootWindowWin::CreateRootWindow, this,
-                                 settings, config.initially_hidden));
+#if CHROME_VERSION_MAJOR > 94
+  MAIN_POST_CLOSURE(base::BindOnce(&RootWindowWin::CreateRootWindow, this, settings,
+                                   config->initially_hidden));
+#else
+  MAIN_POST_CLOSURE(base::Bind(&RootWindowWin::CreateRootWindow, this,
+                                   settings, config.initially_hidden));
+#endif
   }
 }
 
@@ -1037,8 +1064,13 @@ void RootWindowWin::OnSetFullscreen(bool fullscreen) {
 
   CefRefPtr<CefBrowser> browser = GetBrowser();
   if (browser) {
+#if CHROME_VERSION_MAJOR > 94
+    std::unique_ptr<window_test::WindowTestRunnerWin> test_runner(
+        new window_test::WindowTestRunnerWin());
+#else
     scoped_ptr<window_test::WindowTestRunnerWin> test_runner(
         new window_test::WindowTestRunnerWin());
+#endif
     if (fullscreen)
       test_runner->Maximize(browser);
     else

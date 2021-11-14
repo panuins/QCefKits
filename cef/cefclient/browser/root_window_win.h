@@ -13,7 +13,9 @@
 #include <string>
 
 #include "include/cef_version.h"
+#if CHROME_VERSION_MAJOR < 95
 #include "include/base/cef_scoped_ptr.h"
+#endif
 #include "browser/browser_window.h"
 #include "browser/root_window.h"
 
@@ -30,7 +32,11 @@ class RootWindowWin : public RootWindow, public BrowserWindow::Delegate {
 
   // RootWindow methods.
   void Init(RootWindow::Delegate* delegate,
+#if CHROME_VERSION_MAJOR > 94
+            std::unique_ptr<RootWindowConfig> config,
+#else
             const RootWindowConfig& config,
+#endif
             const CefBrowserSettings& settings) override;
   void InitAsPopup(RootWindow::Delegate* delegate,
                    bool with_controls,
@@ -118,7 +124,11 @@ class RootWindowWin : public RootWindow, public BrowserWindow::Delegate {
   bool with_extension_;
   bool is_popup_;
   RECT start_rect_;
+#if CHROME_VERSION_MAJOR > 94
+  std::unique_ptr<BrowserWindow> browser_window_;
+#else
   scoped_ptr<BrowserWindow> browser_window_;
+#endif
   CefBrowserSettings browser_settings_;
   bool initialized_;
 

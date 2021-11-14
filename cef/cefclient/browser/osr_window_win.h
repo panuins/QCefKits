@@ -178,10 +178,18 @@ class OsrWindowWin
 
   const OsrRendererSettings settings_;
   HWND hwnd_;
+#if CHROME_VERSION_MAJOR > 94
+  std::unique_ptr<OsrRenderHandlerWin> render_handler_;
+#else
   scoped_ptr<OsrRenderHandlerWin> render_handler_;
+#endif
 
   // Class that encapsulates IMM32 APIs and controls IMEs attached to a window.
+#if CHROME_VERSION_MAJOR > 94
+  std::unique_ptr<OsrImeHandlerWin> ime_handler_;
+#else
   scoped_ptr<OsrImeHandlerWin> ime_handler_;
+#endif
 
   RECT client_rect_;
   float device_scale_factor_;
@@ -194,7 +202,11 @@ class OsrWindowWin
 
   // Class that abstracts the accessibility information received from the
   // renderer.
+#if CHROME_VERSION_MAJOR > 94
+  std::unique_ptr<OsrAccessibilityHelper> accessibility_handler_;
+#else
   scoped_ptr<OsrAccessibilityHelper> accessibility_handler_;
+#endif
   IAccessible* accessibility_root_;
 #endif
 

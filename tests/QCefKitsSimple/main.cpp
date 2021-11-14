@@ -11,7 +11,9 @@ int main(int argc, char *argv[])
     //char envstr[] = "QT_QPA_PLATFORMTHEME=gtk3";
 //    char envstr[] = "QT_STYLE_OVERRIDE=kvantum";
     //putenv(envstr);
+#ifdef Q_OS_LINUX
     unsetenv("QT_QPA_PLATFORMTHEME");
+#endif
     int ret = 0;
     {
         QApplication a(argc, argv);

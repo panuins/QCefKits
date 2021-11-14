@@ -72,10 +72,17 @@ void OsrRenderHandlerWin::TriggerBeginFrame(uint64_t last_time_us,
   }
 
   // Trigger again after the necessary delay to maintain the desired frame rate.
+#if CHROME_VERSION_MAJOR > 94
+  CefPostDelayedTask(TID_UI,
+                     base::BindOnce(&OsrRenderHandlerWin::TriggerBeginFrame,
+                                weak_factory_.GetWeakPtr(), now, delay_us),
+                     int64(offset / 1000.0));
+#else
   CefPostDelayedTask(TID_UI,
                      base::Bind(&OsrRenderHandlerWin::TriggerBeginFrame,
                                 weak_factory_.GetWeakPtr(), now, delay_us),
                      int64(offset / 1000.0));
+#endif
 
   if (settings_.external_begin_frame_enabled && browser_) {
     // We're running the BeginFrame timer. Trigger rendering via

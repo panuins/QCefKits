@@ -65,7 +65,7 @@ void SetPosImpl(CefRefPtr<CefBrowser> browser,
     ::ShowWindow(root_hwnd, SW_RESTORE);
   } else {
     // Set the window position.
-    ::SetWindowPos(root_hwnd, NULL, window_rect.x, window_rect.y,
+    ::SetWindowPos(root_hwnd, nullptr, window_rect.x, window_rect.y,
                    window_rect.width, window_rect.height, SWP_NOZORDER);
   }
 }
@@ -104,7 +104,11 @@ void WindowTestRunnerWin::SetPos(CefRefPtr<CefBrowser> browser,
     SetPosImpl(browser, x, y, width, height);
   } else {
     // Execute on the main application thread.
+#if CHROME_VERSION_MAJOR > 94
+    MAIN_POST_CLOSURE(base::BindOnce(SetPosImpl, browser, x, y, width, height));
+#else
     MAIN_POST_CLOSURE(base::Bind(SetPosImpl, browser, x, y, width, height));
+#endif
   }
 }
 
@@ -113,7 +117,11 @@ void WindowTestRunnerWin::Minimize(CefRefPtr<CefBrowser> browser) {
     MinimizeImpl(browser);
   } else {
     // Execute on the main application thread.
+#if CHROME_VERSION_MAJOR > 94
+    MAIN_POST_CLOSURE(base::BindOnce(MinimizeImpl, browser));
+#else
     MAIN_POST_CLOSURE(base::Bind(MinimizeImpl, browser));
+#endif
   }
 }
 
@@ -122,7 +130,11 @@ void WindowTestRunnerWin::Maximize(CefRefPtr<CefBrowser> browser) {
     MaximizeImpl(browser);
   } else {
     // Execute on the main application thread.
+#if CHROME_VERSION_MAJOR > 94
+    MAIN_POST_CLOSURE(base::BindOnce(MaximizeImpl, browser));
+#else
     MAIN_POST_CLOSURE(base::Bind(MaximizeImpl, browser));
+#endif
   }
 }
 
@@ -131,7 +143,11 @@ void WindowTestRunnerWin::Restore(CefRefPtr<CefBrowser> browser) {
     RestoreImpl(browser);
   } else {
     // Execute on the main application thread.
+#if CHROME_VERSION_MAJOR > 94
+    MAIN_POST_CLOSURE(base::BindOnce(RestoreImpl, browser));
+#else
     MAIN_POST_CLOSURE(base::Bind(RestoreImpl, browser));
+#endif
   }
 }
 
