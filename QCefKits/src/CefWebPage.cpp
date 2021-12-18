@@ -312,22 +312,25 @@ void CefWebPage::OnLoadEnd(CefRefPtr<CefBrowser> /*browser*/,
 
 // Set the loading state.
 void CefWebPage::OnSetLoadingState(CefRefPtr<CefBrowser> /*browser*/,
-                                   bool /*isLoading*/,
-                                   bool /*canGoBack*/,
-                                   bool /*canGoForward*/)
+                                   bool isLoading,
+                                   bool canGoBack,
+                                   bool canGoForward)
 {
 //    qDebug() << "CefWebPage::OnSetLoadingState" << browser->GetIdentifier()
 //             << isLoading;
+    emit loadingStateChanged(isLoading, canGoBack, canGoForward);
 }
 
 void CefWebPage::OnLoadError(CefRefPtr<CefBrowser> /*browser*/,
                              CefRefPtr<CefFrame> /*frame*/,
-                             CefLoadHandler::ErrorCode /*errorCode*/,
+                             CefLoadHandler::ErrorCode errorCode,
                              const CefString& errorText,
-                             const CefString& /*failedUrl*/)
+                             const CefString& failedUrl)
 {
 //    qDebug() << "CefWebPage::OnLoadError" << QString::fromStdWString(errorText.ToWString());
-    emit loadFailed();
+    emit loadFailed(int(errorCode),
+                    QString::fromStdWString(errorText.ToWString()),
+                    QString::fromStdWString(failedUrl.ToWString()));
 }
 
 // Set the draggable regions.
@@ -443,6 +446,7 @@ void CefWebPage::resizeBrowser(const QSize &size)
         ::MoveWindow(HWND(handler), 0, 0, size.width(), size.height(), true);
 #elif defined(Q_OS_LINUX)
 #ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
+        (void)handler;
         if (m_middleWindow)
         {
             m_middleWindow->resize(size);

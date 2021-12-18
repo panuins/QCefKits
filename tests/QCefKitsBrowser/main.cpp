@@ -1,16 +1,13 @@
-#include "widget.h"
+#include "MainWindow.h"
 #include <QCefKits.h>
 #include <QApplication>
 #include <QDebug>
 #include <QDir>
 
+#include <QApplication>
+
 int main(int argc, char *argv[])
 {
-    //qputenv("QT_QPA_PLATFORMTHEME", "gtk3");
-    //setenv("QT_QPA_PLATFORMTHEME","gtk3",1);
-    //char envstr[] = "QT_QPA_PLATFORMTHEME=gtk3";
-//    char envstr[] = "QT_STYLE_OVERRIDE=kvantum";
-    //putenv(envstr);
 #ifdef Q_OS_LINUX
     setenv("IBUS_ENABLE_SYNC_MODE","1",1);
     unsetenv("QT_QPA_PLATFORMTHEME");
@@ -27,7 +24,7 @@ int main(int argc, char *argv[])
     //    cefsettings.multiThread = false;
         QCefKitsInit(argc, argv, cefsettings);
 
-        Widget w;
+        MainWindow w;
         w.show();
         ret = a.exec();
         qDebug() << "after QApplication::exec";

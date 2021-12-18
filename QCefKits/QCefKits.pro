@@ -109,6 +109,8 @@ QMAKE_LFLAGS += -m64
 }
 
 SOURCES += \
+    src/QCefBrowserBar.cpp \
+    src/QCefStackedWidget.cpp \
     src/ClientAppRenderer.cpp \
     src/QCefKits.cpp \
     src/QCefKitsSettings.cpp \
@@ -126,8 +128,10 @@ SOURCES += \
     src/IPendingDialog.cpp
 
 HEADERS += \
+    include/QCefBrowserBar.h \
     include/QCefKits.h \
     include/QCefKitsSettings.h \
+    include/QCefStackedWidget.h \
     include/QCefWidget.h \
     include/QCefKitsGlobal.h \
     src/CefSwitches.h \
@@ -144,6 +148,9 @@ HEADERS += \
     src/JSDialogHandler.h \
     src/IPendingDialog.h \
     src/QCefKits_internal.h
+
+FORMS += \
+    src/QCefBrowserBar.ui
 
 # Default rules for deployment.
 unix {

@@ -137,6 +137,8 @@ public:
 
     struct PageFeatures pageFeatures;
 
+    CefRefPtr<CefBrowser> m_browser;
+
 Q_SIGNALS:
     void urlChanged(QUrl url);
     void titleChanged(QString title);
@@ -144,17 +146,21 @@ Q_SIGNALS:
     void browserClosed();
     void loadStarted();
     void loadComplete();
-    void loadFailed();
+    void loadFailed(int errorCode,
+                    QString errorText,
+                    QUrl failedUrl);
+    void loadingStateChanged(bool isLoading,
+                             bool canGoBack,
+                             bool canGoForward);
     void newBrowserRequest(QSharedPointer<CefWebPage> page);
     void consoleMessage(QCefKits_logLevel level,
-                        const QString& message,
-                        const QString& source,
+                        QString message,
+                        QString source,
                         int line);
 
 private:
     explicit CefWebPage();
 
-    CefRefPtr<CefBrowser> m_browser;
     CefRefPtr<QCefKits::ClientHandler> m_handler;
     QPointer<QCefWidget> m_widget;
 #ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW

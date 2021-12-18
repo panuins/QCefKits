@@ -802,7 +802,7 @@ void ClientHandler::OnLoadingStateChange(CefRefPtr<CefBrowser> browser,
     NotifyLoadingState(browser, isLoading, canGoBack, canGoForward);
 }
 
-void ClientHandler::OnLoadError(CefRefPtr<CefBrowser> /*browser*/,
+void ClientHandler::OnLoadError(CefRefPtr<CefBrowser> browser,
                                 CefRefPtr<CefFrame> frame,
                                 ErrorCode errorCode,
                                 const CefString& errorText,
@@ -819,19 +819,17 @@ void ClientHandler::OnLoadError(CefRefPtr<CefBrowser> /*browser*/,
         return;
     }
 
-    // Don't display an error for external protocols that we allow the OS to
-    // handle. See OnProtocolExecution().
-    if (errorCode == ERR_UNKNOWN_URL_SCHEME)
-    {
-        std::string urlStr = frame->GetURL();
-        if (urlStr.find("spotify:") == 0)
-        {
-            return;
-        }
-    }
-
     // Load the error page.
     LoadErrorPage(frame, failedUrl, errorCode, errorText);
+    if (!m_delegate.isNull())
+    {
+        m_delegate->OnLoadError(browser, frame, errorCode, errorText, failedUrl);
+    }
+    else
+    {
+        qDebug() << "ClientHandler::OnLoadError: error: m_delegate is null"
+                 << browser->GetIdentifier();
+    }
 }
 
 bool ClientHandler::OnBeforeBrowse(CefRefPtr<CefBrowser> browser,
