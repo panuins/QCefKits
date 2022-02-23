@@ -312,7 +312,7 @@ public:
 #if CHROME_VERSION_MAJOR > 94
             CefRefPtr<CefCallback> callback) override;
 #else
-            efRefPtr<CefRequestCallback> callback) override;
+            CefRefPtr<CefRequestCallback> callback) override;
 #endif
     CefRefPtr<CefResourceHandler> GetResourceHandler(
             CefRefPtr<CefBrowser> browser,

@@ -2,7 +2,7 @@
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 
-#include "tests/cefclient/browser/views_overlay_controls.h"
+#include "browser/views_overlay_controls.h"
 
 #include "include/cef_version.h"
 #if CHROME_VERSION_MAJOR > 94

@@ -21,7 +21,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_layout->addWidget(m_browserBar);
     m_layout->addWidget(m_stackedWidget);
     m_stackedWidget->createNewCefWidget(QUrl("https://gitee.com/panuins/test-html/raw/main/html/index.html"));
-    m_stackedWidget->createNewCefWidget(QUrl("http://127.0.0.1"));
+    m_stackedWidget->createNewCefWidget(QUrl("http://192.168.56.1"));
     connect(qApp, &QGuiApplication::lastWindowClosed,
             this, [](){
         qDebug() << "QGuiApplication::lastWindowClosed";

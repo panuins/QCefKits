@@ -30,6 +30,7 @@ MainMessageLoop* MainMessageLoop::Get() {
   return g_main_message_loop;
 }
 
+#if CHROME_VERSION_MAJOR > 94
 void MainMessageLoop::PostClosure(base::OnceClosure closure) {
   PostTask(CefCreateClosureTask(std::move(closure)));
 }
@@ -37,5 +38,9 @@ void MainMessageLoop::PostClosure(base::OnceClosure closure) {
 void MainMessageLoop::PostClosure(const base::RepeatingClosure& closure) {
   PostTask(CefCreateClosureTask(closure));
 }
-
+#else
+void MainMessageLoop::PostClosure(const base::Closure& closure) {
+  PostTask(CefCreateClosureTask(closure));
+}
+#endif
 }  // namespace client
