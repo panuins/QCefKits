@@ -19,6 +19,7 @@
 QCefWidget::QCefWidget(QWidget *parent)
     : QWidget(parent)
 {
+    this->setAttribute(Qt::WA_NativeWindow, true);
 #if defined(Q_OS_LINUX)
     this->setAttribute(Qt::WA_NativeWindow, true);
     this->setAttribute(Qt::WA_DontCreateNativeAncestors, true);
@@ -44,7 +45,7 @@ void QCefWidget::closeBrowser()
 {
     if (m_page)
     {
-//        qDebug() << "QCefWidget::closeBrowser aa";
+//        qDebug() << "QCefWidget::closeBrowser" << this;
         m_page->closeBrowser();
         m_page.clear();
     }
@@ -371,6 +372,16 @@ void QCefWidget::leaveEvent(QEvent *event)
     setBrowserFocus(false);
 }
 
+void QCefWidget::showEvent(QShowEvent *event)
+{
+    QWidget::showEvent(event);
+}
+
+void QCefWidget::hideEvent(QHideEvent *event)
+{
+    QWidget::hideEvent(event);
+}
+
 void QCefWidget::onBrowserCreated()
 {
     m_page->resizeBrowser(size());
@@ -402,7 +413,8 @@ void QCefWidget::onBrowserCreated()
 
 void QCefWidget::onBrowserClosed()
 {
-    //qDebug() << "QCefWidget::onBrowserClosed";
+    //setParent(nullptr);
+//    qDebug() << "QCefWidget::onBrowserClosed" << this;
     emit browserClosed();
 }
 
@@ -429,6 +441,21 @@ void QCefWidget::onNewBrowserRequest(QSharedPointer<CefWebPage> page)
 //        newBrowser->winId();
     newBrowser->setWebPage(page);
 //        qDebug() << "CefWebPage::newBrowserRequest end";
+//    this->newBrowserCreated(
+//                newBrowser,
+//                m_page->pageFeatures.x,
+//                m_page->pageFeatures.xSet,
+//                m_page->pageFeatures.y,
+//                m_page->pageFeatures.ySet,
+//                m_page->pageFeatures.width,
+//                m_page->pageFeatures.widthSet,
+//                m_page->pageFeatures.height,
+//                m_page->pageFeatures.heightSet,
+//                m_page->pageFeatures.menuBarVisible,
+//                m_page->pageFeatures.statusBarVisible,
+//                m_page->pageFeatures.toolBarVisible,
+//                m_page->pageFeatures.scrollbarsVisible,
+//                m_page->pageFeatures.isPopup);
 }
 
 void QCefWidget::onUrlChanged(QUrl url)

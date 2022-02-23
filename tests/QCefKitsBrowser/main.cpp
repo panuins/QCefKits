@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
         QDir dir = a.applicationDirPath();
         cefsettings.userDataPath = dir.absoluteFilePath("userdata");
         cefsettings.cachePath = dir.absoluteFilePath("cache");
+        //cefsettings.no_sandbox = false;
     //    cefsettings.backgroundColor = Qt::red;
     //    cefsettings.logFile = "/dev/stdout";
     //    cefsettings.multiThread = false;

@@ -1,6 +1,8 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
+#include <QApplication>
 #include <QUrl>
+#include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -18,11 +20,33 @@ MainWindow::MainWindow(QWidget *parent)
     m_layout->addWidget(m_tabbar);
     m_layout->addWidget(m_browserBar);
     m_layout->addWidget(m_stackedWidget);
-    m_stackedWidget->createNewCefWidget(QUrl("http://192.168.222.1"));
+    m_stackedWidget->createNewCefWidget(QUrl("https://gitee.com/panuins/test-html/raw/main/html/index.html"));
+    m_stackedWidget->createNewCefWidget(QUrl("http://127.0.0.1"));
+    connect(qApp, &QGuiApplication::lastWindowClosed,
+            this, [](){
+        qDebug() << "QGuiApplication::lastWindowClosed";
+    });
+    connect(qApp, &QCoreApplication::aboutToQuit,
+            this, [](){
+        qDebug() << "QGuiApplication::aboutToQuit";
+    });
 }
 
 MainWindow::~MainWindow()
 {
+    qDebug() << "MainWindow::~MainWindow";
     delete ui;
 }
 
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    qDebug() << "MainWindow::closeEvent";
+    QMainWindow::closeEvent(event);
+}
+
+
+void MainWindow::on_actionNew_window_triggered()
+{
+    MainWindow *window = new MainWindow;
+    window->show();
+}

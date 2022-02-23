@@ -11,17 +11,24 @@
 #include "include/QCefWidget.h"
 #include "include/QCefBrowserBar.h"
 #include "src/CefWebPage.h"
+#include "QCefKits_internal.h"
 #include <QAbstractButton>
 #include <QTabBar>
 #include <QVariant>
 #include <QLineEdit>
 #include <QDebug>
+#include <QThread>
 
 QCefStackedWidget::QCefStackedWidget(QWidget *parent)
     : QWidget(parent)
 {
     m_layout = new QStackedLayout();
     setLayout(m_layout);
+}
+
+QCefStackedWidget::~QCefStackedWidget()
+{
+//    qDebug() << "QCefStackedWidget::~QCefStackedWidget";
 }
 
 int QCefStackedWidget::count() const
@@ -46,6 +53,10 @@ QCefWidget *QCefStackedWidget::createNewCefWidget(
         {
             int newIndex = m_tabbar->insertTab(index, tr("New tab"));
             m_tabbar->setTabData(newIndex, QVariant::fromValue<QCefWidget *>(w));
+//            qDebug() << "QCefStackedWidget::createNewCefWidget"
+//                     << QVariant::fromValue<QCefWidget *>(w)
+//                     << m_tabbar->tabData(index).value<QCefWidget *>()
+//                     << newIndex << index;
         }
     }
     else
@@ -55,8 +66,18 @@ QCefWidget *QCefStackedWidget::createNewCefWidget(
         {
             int newIndex = m_tabbar->addTab(tr("New tab"));
             m_tabbar->setTabData(newIndex, QVariant::fromValue<QCefWidget *>(w));
+//            qDebug() << "QCefStackedWidget::createNewCefWidget"
+//                     << QVariant::fromValue<QCefWidget *>(w)
+//                     << m_tabbar->tabData(newIndex).value<QCefWidget *>()
+//                     << newIndex << index;
         }
     }
+//    if (m_tabbar)
+//    {
+//        qDebug() << "QCefStackedWidget::createNewCefWidget"
+//                 << QVariant::fromValue<QCefWidget *>(w)
+//                 << m_tabbar->tabData(index).value<QCefWidget *>();
+//    }
     initConnections(w);
     return w;
 }
@@ -192,9 +213,14 @@ void QCefStackedWidget::on_tabbar_currentChanged(int index)
 {
     QTabBar *tab = qobject_cast<QTabBar *>(sender());
     QCefWidget *w = tab->tabData(index).value<QCefWidget *>();
+//    qDebug() << "QCefStackedWidget::on_tabbar_currentChanged" << index << w
+//             << tab->tabData(index)
+//             << m_layout->count();
     if (w)
     {
-        m_layout->setCurrentWidget(w);
+        //m_layout->setCurrentWidget(w);
+        m_layout->setCurrentIndex(index);
+//        qDebug() << "QCefStackedWidget::on_tabbar_currentChanged" << m_layout->currentWidget();
         if (m_browserBar)
         {
             if (m_browserBar->addressBar())
@@ -223,6 +249,7 @@ void QCefStackedWidget::on_tabbar_tabCloseRequested(int index)
     QCefWidget *w = tab->tabData(index).value<QCefWidget *>();
     if (w)
     {
+        qDebug() << "QCefStackedWidget::on_tabbar_tabCloseRequested" << w;
         w->closeBrowser();
     }
 }
@@ -236,7 +263,18 @@ void QCefStackedWidget::on_cefWidget_browserCreated()
 void QCefStackedWidget::on_cefWidget_browserClosed()
 {
     QCefWidget *w = qobject_cast<QCefWidget *>(sender());
+//    qDebug() << "QCefStackedWidget::on_cefWidget_browserClosed" << w;
+    if (m_tabbar)
+    {
+        int index = findTab(w);
+        if ((index >= 0) && (index < m_tabbar->count()))
+        {
+            m_tabbar->removeTab(index);
+        }
+    }
+    m_layout->removeWidget(w);
     emit browserClosed(w);
+    w->deleteLater();
 }
 
 void QCefStackedWidget::on_cefWidget_consoleMessage(
@@ -295,14 +333,37 @@ void QCefStackedWidget::on_cefWidget_newBrowserCreated(
         bool scrollbarsVisible,
         bool isPopup)
 {
+//    qDebug() << "QCefStackedWidget::on_cefWidget_newBrowserCreated"
+//             << newPage << isPopup;
     QCefWidget *w = qobject_cast<QCefWidget *>(sender());
     emit newBrowserCreated(w, newPage, x, xSet, y, ySet, width, widthSet, height, heightSet,
                            menuBarVisible, statusBarVisible, toolBarVisible, scrollbarsVisible, isPopup);
     if (!isPopup)
     {
-        m_layout->addWidget(newPage);
+//        qDebug() << "QCefStackedWidget::on_cefWidget_newBrowserCreated"
+//                 << "before set parent"
+//                 << thread() << newPage->thread() << QThread::currentThread();
+        newPage->setParent(this);
+//        qDebug() << "QCefStackedWidget::on_cefWidget_newBrowserCreated"
+//                 << "after set parent";
+        int index = m_layout->addWidget(newPage);
         int newIndex = m_tabbar->addTab(tr("New tab"));
         m_tabbar->setTabData(newIndex, QVariant::fromValue<QCefWidget *>(newPage));
+//        qDebug() << "QCefStackedWidget::on_cefWidget_newBrowserCreated"
+//                 << QVariant::fromValue<QCefWidget *>(newPage)
+//                 << m_tabbar->tabData(newIndex).value<QCefWidget *>()
+//                 << newIndex << index;
+        initConnections(newPage);
+    }
+    else
+    {
+//        qDebug() << "QCefStackedWidget::on_cefWidget_newBrowserCreated"
+//                 << "before show"
+//                 << thread() << newPage->thread() << QThread::currentThread();
+        newPage->show();
+//        qDebug() << "QCefStackedWidget::on_cefWidget_newBrowserCreated"
+//                 << "after show";
+        initConnections(newPage);
     }
 }
 
@@ -374,7 +435,8 @@ void QCefStackedWidget::initConnections(QCefWidget *w)
     connect(w, &QCefWidget::loadingStateChanged,
             this, &QCefStackedWidget::on_cefWidget_loadingStateChanged);
     connect(w, &QCefWidget::newBrowserCreated,
-            this, &QCefStackedWidget::on_cefWidget_newBrowserCreated);
+            this, &QCefStackedWidget::on_cefWidget_newBrowserCreated,
+            Qt::QueuedConnection);
     connect(w, &QCefWidget::titleChanged,
             this, &QCefStackedWidget::on_cefWidget_titleChanged);
     connect(w, &QCefWidget::urlChanged,

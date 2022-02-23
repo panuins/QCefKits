@@ -93,6 +93,8 @@ protected:
     void focusOutEvent(QFocusEvent *event);
     void enterEvent(QEvent *event);
     void leaveEvent(QEvent *event);
+    void showEvent(QShowEvent *event);
+    void hideEvent(QHideEvent *event);
 
 private Q_SLOTS:
     void onBrowserCreated();

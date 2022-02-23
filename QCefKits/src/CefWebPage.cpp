@@ -177,8 +177,8 @@ QSharedPointer<CefWebPage> CefWebPage::createNewPage(QCefWidget *w)
 // Called when the browser is created.
 void CefWebPage::OnBrowserCreated(CefRefPtr<CefBrowser> browser)
 {
-    qDebug() << "CefWebPage::OnBrowserCreated"
-             << browser->GetIdentifier();
+//    qDebug() << "CefWebPage::OnBrowserCreated"
+//             << browser->GetIdentifier();
     m_browser = browser;
     WId handler = WId(m_browser->GetHost()->GetWindowHandle());
 #ifdef Q_OS_WIN
@@ -209,9 +209,13 @@ void CefWebPage::OnBrowserCreated(CefRefPtr<CefBrowser> browser)
 }
 
 // Called when the browser is closing.
-bool CefWebPage::DoClose(CefRefPtr<CefBrowser> /*browser*/)
+bool CefWebPage::DoClose(CefRefPtr<CefBrowser> browser)
 {
-    qDebug() << "CefWebPage::DoClose";
+//    qDebug() << "CefWebPage::DoClose" << browser->GetIdentifier();
+    if (m_widget)
+    {
+        m_widget->setParent(nullptr);
+    }
 //#ifdef Q_OS_LINUX
 //#ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
 //    QCefKits::ReparentWindow(0, m_browser->GetHost()->GetWindowHandle(), 0);
@@ -240,9 +244,9 @@ bool CefWebPage::DoClose(CefRefPtr<CefBrowser> /*browser*/)
 }
 
 // Called when the browser has been closed.
-void CefWebPage::OnBrowserClosed(CefRefPtr<CefBrowser> /*browser*/)
+void CefWebPage::OnBrowserClosed(CefRefPtr<CefBrowser> browser)
 {
-    qDebug() << "CefWebPage::OnBrowserClosed";
+//    qDebug() << "CefWebPage::OnBrowserClosed" << browser->GetIdentifier();
     m_browser = nullptr;
     m_handler = nullptr;
     emit browserClosed();
@@ -397,18 +401,21 @@ QSharedPointer<QCefKits::ClientHandler::Delegate> CefWebPage::CreatePopupWindow(
     ret->pageFeatures.scrollbarsVisible = popupFeatures.scrollbarsVisible;
     ret->pageFeatures.isPopup = (target_disposition == WOD_NEW_POPUP)
             || (target_disposition == WOD_NEW_WINDOW);
+    qDebug() << "CefWebPage::CreatePopupWindow before newBrowserRequest"
+             << target_disposition;
     emit newBrowserRequest(ret);
-//    qDebug() << "CefWebPage::CreatePopupWindow after newBrowserRequest";
+//    qDebug() << "CefWebPage::CreatePopupWindow after newBrowserRequest"
+//             << target_disposition << ret->m_widget;
     if (ret->m_widget)
     {
         ret->moveToThread(ret->m_widget->thread());
 #ifdef Q_OS_WIN
 #if CHROME_VERSION_MAJOR > 94
-    CefRect wnd_rect = {0, 0, m_widget->width(), m_widget->height()};
-    windowInfo.SetAsChild(HWND(m_widget->winId()), wnd_rect);
+    CefRect wnd_rect = {0, 0, ret->m_widget->width(), ret->m_widget->height()};
+    windowInfo.SetAsChild(HWND(ret->m_widget->winId()), wnd_rect);
 #else
-    RECT wnd_rect = {0, 0, m_widget->width(), m_widget->height()};
-    windowInfo.SetAsChild(HWND(m_widget->winId()), wnd_rect);
+    RECT wnd_rect = {0, 0, ret->m_widget->width(), ret->m_widget->height()};
+    windowInfo.SetAsChild(HWND(ret->m_widget->winId()), wnd_rect);
 #endif
 #elif defined(Q_OS_LINUX)
 #ifdef LINUX_USING_QWINDOW_AS_MIDDLE_WINDOW
@@ -484,4 +491,32 @@ void CefWebPage::setCefWidget(QPointer<QCefWidget> widget)
 #endif
 #endif
     m_widget = widget;
+}
+
+void CefWebPage::show()
+{
+    if (m_browser)
+    {
+#ifdef Q_OS_WIN
+        HWND hwnd = m_browser->GetHost()->GetWindowHandle();
+        if (hwnd && !::IsWindowVisible(hwnd))
+        {
+            ShowWindow(hwnd, SW_SHOW);
+        }
+#endif
+    }
+}
+
+void CefWebPage::hide()
+{
+    if (m_browser)
+    {
+#ifdef Q_OS_WIN
+        HWND hwnd = m_browser->GetHost()->GetWindowHandle();
+        if (hwnd && !::IsWindowVisible(hwnd))
+        {
+            ShowWindow(hwnd, SW_HIDE);
+        }
+#endif
+    }
 }

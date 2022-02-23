@@ -14,8 +14,29 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget"/>
-  <widget class="QMenuBar" name="menubar"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuApplication">
+    <property name="title">
+     <string>Application</string>
+    </property>
+    <addaction name="actionNew_window"/>
+   </widget>
+   <addaction name="menuApplication"/>
+  </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionNew_window">
+   <property name="text">
+    <string>New window</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

@@ -134,6 +134,8 @@ public:
         return m_widget;
     }
     void setCefWidget(QPointer<QCefWidget> widget);
+    void show();
+    void hide();
 
     struct PageFeatures pageFeatures;
 

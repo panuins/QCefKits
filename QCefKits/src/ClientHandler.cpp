@@ -20,6 +20,7 @@
 #include <include/wrapper/cef_closure_task.h>
 #include <include/cef_command_line.h>
 #include <QDebug>
+#include <QtGlobal>
 
 #ifdef OS_LINUX
 #include <QX11Info>
@@ -724,13 +725,14 @@ bool ClientHandler::DoClose(CefRefPtr<CefBrowser> browser)
 {
     CEF_REQUIRE_UI_THREAD();
 
+    //return false;
     if (!m_delegate.isNull())
     {
         return m_delegate->DoClose(browser);
     }
     else
     {
-        qDebug() << "ClientHandler::NotifyBrowserClosing: warning: m_delegate is null"
+        qDebug() << "ClientHandler::DoClose: warning: m_delegate is null"
                  << browser->GetIdentifier();
     }
     return false;
@@ -738,7 +740,8 @@ bool ClientHandler::DoClose(CefRefPtr<CefBrowser> browser)
 
 void ClientHandler::OnBeforeClose(CefRefPtr<CefBrowser> browser)
 {
-    qDebug() << "ClientHandler::OnBeforeClose";
+//    qDebug() << "ClientHandler::OnBeforeClose" << qintptr(this)
+//             << browser->GetIdentifier();
     CEF_REQUIRE_UI_THREAD();
 
     // Remove and delete message router handlers.
@@ -774,7 +777,7 @@ void ClientHandler::OnLoadEnd(CefRefPtr<CefBrowser> browser,
                               CefRefPtr<CefFrame> frame,
                               int httpStatusCode)
 {
-    qDebug() << "ClientHandler::OnLoadEnd" << httpStatusCode;
+//    qDebug() << "ClientHandler::OnLoadEnd" << httpStatusCode;
     if (!m_delegate.isNull())
     {
         m_delegate->OnLoadEnd(browser, frame, httpStatusCode);
@@ -793,7 +796,7 @@ void ClientHandler::OnLoadingStateChange(CefRefPtr<CefBrowser> browser,
 {
     CEF_REQUIRE_UI_THREAD();
 
-    qDebug() << "ClientHandler::OnLoadingStateChange";
+//    qDebug() << "ClientHandler::OnLoadingStateChange";
     if (!isLoading && m_initial_navigation_)
     {
         m_initial_navigation_ = false;
@@ -839,8 +842,8 @@ bool ClientHandler::OnBeforeBrowse(CefRefPtr<CefBrowser> browser,
                                    bool /*is_redirect*/)
 {
     CEF_REQUIRE_UI_THREAD();
-    qDebug() << "ClientHandler::OnBeforeBrowse"
-             << QString::fromStdWString(request->GetURL().ToWString());
+//    qDebug() << "ClientHandler::OnBeforeBrowse"
+//             << QString::fromStdWString(request->GetURL().ToWString());
 
     m_message_router_->OnBeforeBrowse(browser, frame);
     return false;
@@ -856,18 +859,18 @@ bool ClientHandler::OnOpenURLFromTab(
 {
     qDebug() << "ClientHandler::OnOpenURLFromTab target_url="
              << QString::fromStdString(target_url.ToString());
-    if (target_disposition == WOD_NEW_BACKGROUND_TAB ||
-            target_disposition == WOD_NEW_FOREGROUND_TAB)
-    {
-        // Handle middle-click and ctrl + left-click by opening the URL in a new
-        // browser window.
-//        RootWindowConfig config;
-//        config.with_controls = true;
-//        config.with_osr = is_osr();
-//        config.url = target_url;
-//        MainContext::Get()->GetRootWindowManager()->CreateRootWindow(config);
-        return true;
-    }
+//    if (target_disposition == WOD_NEW_BACKGROUND_TAB ||
+//            target_disposition == WOD_NEW_FOREGROUND_TAB)
+//    {
+//        // Handle middle-click and ctrl + left-click by opening the URL in a new
+//        // browser window.
+////        RootWindowConfig config;
+////        config.with_controls = true;
+////        config.with_osr = is_osr();
+////        config.url = target_url;
+////        MainContext::Get()->GetRootWindowManager()->CreateRootWindow(config);
+//        return true;
+//    }
 
     // Open the URL in the current browser window.
     return false;

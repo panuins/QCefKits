@@ -19,6 +19,12 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+protected:
+    void closeEvent(QCloseEvent *event);
+
+private slots:
+    void on_actionNew_window_triggered();
+
 private:
     Ui::MainWindow *ui;
     QVBoxLayout *m_layout;

@@ -433,12 +433,12 @@ private:
     // The following members will only be accessed on the CEF UI thread.
 
     // Track state information for the text context menu.
-    struct TestMenuState
-    {
-        TestMenuState() : check_item(true), radio_item(0) {}
-        bool check_item;
-        int radio_item;
-    } m_test_menu_state_;
+//    struct TestMenuState
+//    {
+//        TestMenuState() : check_item(true), radio_item(0) {}
+//        bool check_item;
+//        int radio_item;
+//    } m_test_menu_state_;
 
     CefRefPtr<CefDialogHandler> m_fileDialogHandler;
     CefRefPtr<CefJSDialogHandler> m_jsDialogHandler;

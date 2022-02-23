@@ -29,6 +29,7 @@ class QCEFKITS_EXPORT QCefStackedWidget : public QWidget
 
 public:
     explicit QCefStackedWidget(QWidget *parent = nullptr);
+    ~QCefStackedWidget();
 
     int count() const;
     QCefWidget *cefWidget(int index) const;

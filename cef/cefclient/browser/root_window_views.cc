@@ -676,8 +676,8 @@ void RootWindowViews::CreateViewsWindow(
 
 #ifndef NDEBUG
   // Make sure the default images loaded successfully.
-  DCHECK_EQ(images.size(), arraysize(kDefaultImageCache));
-  for (size_t i = 0U; i < arraysize(kDefaultImageCache); ++i) {
+  DCHECK_EQ(images.size(), sizeof(kDefaultImageCache)/sizeof(const char*));
+  for (size_t i = 0U; i < sizeof(kDefaultImageCache)/sizeof(const char*); ++i) {
     DCHECK(images[i]) << "Default image " << i << " failed to load";
   }
 #endif
